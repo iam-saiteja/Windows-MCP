@@ -80,6 +80,8 @@ class Desktop:
         as_bytes: bool | str = False,
         scale: float = 1.0,
         grid_lines: tuple[int, int] | None = None,
+        display_indices: list[int] | None = None,
+        max_image_size: Size | None = None,
     ) -> DesktopState:
         use_annotation = use_annotation is True or (
             isinstance(use_annotation, str) and use_annotation.lower() == "true"
@@ -91,6 +93,7 @@ class Desktop:
         as_bytes = as_bytes is True or (isinstance(as_bytes, str) and as_bytes.lower() == "true")
 
         start_time = time()
+        capture_rect = self.get_display_union_rect(display_indices) if display_indices else None
 
         controls_handles = self.get_controls_handles()  # Taskbar,Program Manager,Apps, Dialogs
         windows, windows_handles = self.get_windows(controls_handles=controls_handles)  # Apps
@@ -122,17 +125,39 @@ class Desktop:
             active_window_handle, other_windows_handles, use_dom=use_dom
         )
 
+        screenshot_region = self._rect_to_bounding_box(capture_rect) if capture_rect else None
+        if screenshot_region:
+            active_window = self._filter_window_to_region(active_window, screenshot_region)
+            windows = self._filter_windows_to_region(windows, screenshot_region)
+            tree_state = self._filter_tree_state_to_region(tree_state, screenshot_region)
+            if cursor_position and not self._point_in_region(cursor_position, screenshot_region):
+                cursor_position = None
+
         screenshot_size = None
         if use_vision:
             if use_annotation:
                 nodes = tree_state.interactive_nodes
                 screenshot = self.get_annotated_screenshot(
-                    nodes=nodes, 
+                    nodes=nodes,
                     cursor_pos=cursor_position,
-                    grid_lines=grid_lines
+                    grid_lines=grid_lines,
+                    capture_rect=capture_rect,
                 )
             else:
-                screenshot = self.get_screenshot()
+                screenshot = self.get_screenshot(capture_rect=capture_rect)
+
+            if max_image_size:
+                scale_width = (
+                    max_image_size.width / screenshot.width
+                    if screenshot.width > max_image_size.width
+                    else 1.0
+                )
+                scale_height = (
+                    max_image_size.height / screenshot.height
+                    if screenshot.height > max_image_size.height
+                    else 1.0
+                )
+                scale = min(scale, scale_width, scale_height)
 
             if scale != 1.0:
                 screenshot = screenshot.resize(
@@ -158,6 +183,8 @@ class Desktop:
             screenshot=screenshot,
             cursor_position=cursor_position,
             screenshot_size=screenshot_size,
+            screenshot_region=screenshot_region,
+            screenshot_displays=display_indices,
             tree_state=tree_state,
         )
         # Log the time taken to capture the state
@@ -848,18 +875,70 @@ class Desktop:
         width, height = uia.GetVirtualScreenSize()
         return Size(width=width, height=height)
 
-    def get_screenshot(self) -> Image.Image:
+    @staticmethod
+    def parse_display_selection(
+        display: int | list[int] | tuple[int, ...] | None,
+    ) -> list[int] | None:
+        if display is None or display == "":
+            return None
+
+        if isinstance(display, bool):
+            raise ValueError("display must be a JSON array of non-negative integers, for example [0] or [0,1]")
+
+        if isinstance(display, int):
+            values = [display]
+        elif isinstance(display, (list, tuple)):
+            values = list(display)
+        else:
+            raise ValueError("display must be a JSON array of non-negative integers, for example [0] or [0,1]")
+
+        unique_values: list[int] = []
+        for value in values:
+            if not isinstance(value, int) or value < 0:
+                raise ValueError("display must contain only non-negative integers")
+            if value not in unique_values:
+                unique_values.append(value)
+        return unique_values or None
+
+    def get_display_union_rect(self, display_indices: list[int]) -> uia.Rect:
+        monitor_rects = uia.GetMonitorsRect()
+        if not monitor_rects:
+            logger.warning("Monitor enumeration returned no monitors while display filter was requested")
+            raise ValueError("No displays detected")
+
+        invalid_indices = [index for index in display_indices if index >= len(monitor_rects)]
+        if invalid_indices:
+            logger.warning(
+                "Invalid display selection %s. Available displays: 0-%s",
+                invalid_indices,
+                len(monitor_rects) - 1,
+            )
+            raise ValueError(
+                f"Invalid display index {invalid_indices[0]}. Available displays: 0-{len(monitor_rects) - 1}"
+            )
+
+        selected_rects = [monitor_rects[index] for index in display_indices]
+        return uia.Rect(
+            left=min(rect.left for rect in selected_rects),
+            top=min(rect.top for rect in selected_rects),
+            right=max(rect.right for rect in selected_rects),
+            bottom=max(rect.bottom for rect in selected_rects),
+        )
+
+    def get_screenshot(self, capture_rect: uia.Rect | None = None) -> Image.Image:
         try:
-            return ImageGrab.grab(all_screens=True)
+            screenshot = ImageGrab.grab(all_screens=True)
         except Exception:
             logger.warning("Failed to capture virtual screen, using primary screen")
-            return ImageGrab.grab()
+            screenshot = ImageGrab.grab()
+        return self._crop_screenshot(screenshot, capture_rect)
 
     def get_annotated_screenshot(
-        self, 
-        nodes: list[TreeElementNode], 
+        self,
+        nodes: list[TreeElementNode],
         cursor_pos: tuple[int, int] | None = None,
-        grid_lines: tuple[int, int] | None = None
+        grid_lines: tuple[int, int] | None = None,
+        capture_rect: uia.Rect | None = None,
     ) -> Image.Image:
         screenshot = self.get_screenshot()
         # Add padding
@@ -949,7 +1028,156 @@ class Desktop:
             draw.rectangle([acx + r, acy - r, acx + r + c_label_width + 4, acy - r + 16], fill="red")
             draw.text((acx + r + 2, acy - r), c_label, fill="white", font=font)
 
+        if capture_rect:
+            crop_box = self._build_crop_box(capture_rect, padding=padding)
+            return padded_screenshot.crop(crop_box)
+
         return padded_screenshot
+
+    @staticmethod
+    def _rect_to_bounding_box(rect: uia.Rect | None) -> BoundingBox | None:
+        if rect is None:
+            return None
+        return BoundingBox(
+            left=rect.left,
+            top=rect.top,
+            right=rect.right,
+            bottom=rect.bottom,
+            width=rect.width(),
+            height=rect.height(),
+        )
+
+    @staticmethod
+    def _point_in_region(point: tuple[int, int], region: BoundingBox) -> bool:
+        x, y = point
+        return region.left <= x < region.right and region.top <= y < region.bottom
+
+    @staticmethod
+    def _clip_bounding_box_to_region(
+        box: BoundingBox | None, region: BoundingBox
+    ) -> BoundingBox | None:
+        if box is None:
+            return None
+        left = max(box.left, region.left)
+        top = max(box.top, region.top)
+        right = min(box.right, region.right)
+        bottom = min(box.bottom, region.bottom)
+        if right <= left or bottom <= top:
+            return None
+        return BoundingBox(
+            left=left,
+            top=top,
+            right=right,
+            bottom=bottom,
+            width=right - left,
+            height=bottom - top,
+        )
+
+    def _filter_window_to_region(
+        self, window: Window | None, region: BoundingBox
+    ) -> Window | None:
+        if window is None:
+            return None
+        clipped_box = self._clip_bounding_box_to_region(window.bounding_box, region)
+        if clipped_box is None:
+            return None
+        return Window(
+            name=window.name,
+            is_browser=window.is_browser,
+            depth=window.depth,
+            status=window.status,
+            bounding_box=clipped_box,
+            handle=window.handle,
+            process_id=window.process_id,
+        )
+
+    def _filter_windows_to_region(
+        self, windows: list[Window], region: BoundingBox
+    ) -> list[Window]:
+        filtered_windows: list[Window] = []
+        for window in windows:
+            filtered_window = self._filter_window_to_region(window, region)
+            if filtered_window is not None:
+                filtered_windows.append(filtered_window)
+        return filtered_windows
+
+    def _filter_tree_node_to_region(
+        self, node: TreeElementNode, region: BoundingBox
+    ) -> TreeElementNode | None:
+        clipped_box = self._clip_bounding_box_to_region(node.bounding_box, region)
+        if clipped_box is None:
+            return None
+        return TreeElementNode(
+            name=node.name,
+            control_type=node.control_type,
+            window_name=node.window_name,
+            bounding_box=clipped_box,
+            center=clipped_box.get_center(),
+            metadata=node.metadata,
+        )
+
+    def _filter_scroll_node_to_region(self, node, region: BoundingBox):
+        clipped_box = self._clip_bounding_box_to_region(node.bounding_box, region)
+        if clipped_box is None:
+            return None
+        return node.__class__(
+            name=node.name,
+            control_type=node.control_type,
+            window_name=node.window_name,
+            bounding_box=clipped_box,
+            center=clipped_box.get_center(),
+            metadata=node.metadata,
+        )
+
+    def _filter_tree_state_to_region(self, tree_state, region: BoundingBox):
+        filtered_interactive_nodes = []
+        for node in tree_state.interactive_nodes:
+            filtered_node = self._filter_tree_node_to_region(node, region)
+            if filtered_node is not None:
+                filtered_interactive_nodes.append(filtered_node)
+
+        filtered_scrollable_nodes = []
+        for node in tree_state.scrollable_nodes:
+            filtered_node = self._filter_scroll_node_to_region(node, region)
+            if filtered_node is not None:
+                filtered_scrollable_nodes.append(filtered_node)
+
+        filtered_dom_node = None
+        if tree_state.dom_node is not None:
+            filtered_dom_node = self._filter_scroll_node_to_region(tree_state.dom_node, region)
+
+        return tree_state.__class__(
+            status=tree_state.status,
+            root_node=TreeElementNode(
+                name="Desktop",
+                control_type="PaneControl",
+                bounding_box=region,
+                center=region.get_center(),
+                window_name="Desktop",
+                metadata={},
+            ),
+            dom_node=filtered_dom_node,
+            interactive_nodes=filtered_interactive_nodes,
+            scrollable_nodes=filtered_scrollable_nodes,
+            dom_informative_nodes=tree_state.dom_informative_nodes if filtered_dom_node else [],
+        )
+
+    @staticmethod
+    def _build_crop_box(capture_rect: uia.Rect, padding: int = 0) -> tuple[int, int, int, int]:
+        left_offset, top_offset, _, _ = uia.GetVirtualScreenRect()
+        return (
+            capture_rect.left - left_offset + padding,
+            capture_rect.top - top_offset + padding,
+            capture_rect.right - left_offset + padding,
+            capture_rect.bottom - top_offset + padding,
+        )
+
+    def _crop_screenshot(
+        self, screenshot: Image.Image, capture_rect: uia.Rect | None
+    ) -> Image.Image:
+        if capture_rect is None:
+            return screenshot
+        return screenshot.crop(self._build_crop_box(capture_rect))
 
     def send_notification(self, title: str, message: str) -> str:
         safe_title = ps_quote_for_xml(title)

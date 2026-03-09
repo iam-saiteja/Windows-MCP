@@ -389,7 +389,7 @@ MCP Client can access the following tools to interact with Windows:
 - `Move`: Move mouse pointer or drag (set drag=True) to coordinates.
 - `Shortcut`: Press keyboard shortcuts (`Ctrl+c`, `Alt+Tab`, etc).
 - `Wait`: Pause for a defined duration.
-- `Snapshot`: Combined snapshot of default language, browser, active apps and interactive, textual and scrollable elements along with screenshot of the desktop. Supports `use_dom=True` for browser content extraction (web page elements only) and `use_vision=True` for including screenshots.
+- `Snapshot`: Combined snapshot of default language, browser, active apps and interactive, textual and scrollable elements along with screenshot of the desktop. Supports `use_dom=True` for browser content extraction (web page elements only), `use_vision=True` for including screenshots, and `display=[0]` or `display=[0,1]` for limiting all returned Snapshot information to specific screens.
 - `App`: To launch an application from the start menu, resize or move the window and switch between apps.
 - `Shell`: To execute PowerShell commands.
 - `Scrape`: To scrape the entire webpage for information.
@@ -494,4 +494,3 @@ Made with ❤️ by [CursorTouch](https://github.com/CursorTouch)
   url={https://github.com/CursorTouch/Windows-MCP}
 }
 ```
-

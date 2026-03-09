@@ -63,6 +63,8 @@ class DesktopState:
     screenshot: Image | None = None
     cursor_position: tuple[int, int] | None = None
     screenshot_size: Size | None = None
+    screenshot_region: BoundingBox | None = None
+    screenshot_displays: list[int] | None = None
     tree_state: TreeState | None = None
 
     def active_desktop_to_string(self):
