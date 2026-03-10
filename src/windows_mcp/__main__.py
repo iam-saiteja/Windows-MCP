@@ -73,7 +73,7 @@ mcp = FastMCP(name="windows-mcp", instructions=instructions, lifespan=lifespan)
 
 @mcp.tool(
     name="App",
-    description="Manages Windows applications with three modes: 'launch' (opens the prescibed application), 'resize' (adjusts active window size/position), 'switch' (brings specific window into focus).",
+    description="Manages Windows applications with three modes: 'launch' (opens the prescibed application), 'resize' (adjusts the size/position of a named window or the active window if name is omitted), 'switch' (brings specific window into focus).",
     annotations=ToolAnnotations(
         title="App",
         readOnlyHint=False,

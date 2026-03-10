@@ -315,18 +315,54 @@ class Desktop:
         reader = csv.DictReader(io.StringIO(response))
         return "".join([row.get("DisplayName") for row in reader])
 
+    def _find_window_by_name(self, name: str, refresh_state: bool = False) -> tuple["Window | None", str]:
+        """Find a window by fuzzy name match. Returns (window, error_msg).
+        If the returned window is None, error_msg describes the failure reason.
+
+        If refresh_state is True, always refresh desktop_state before searching;
+        otherwise refresh only when desktop_state is absent or empty.
+        """
+        if refresh_state or self.desktop_state is None or not self.desktop_state.windows:
+            self.get_state()
+        if self.desktop_state is None:
+            return None, "Failed to get desktop state. Please try again."
+
+        window_list = [
+            w
+            for w in [self.desktop_state.active_window] + (self.desktop_state.windows or [])
+            if w is not None
+        ]
+        if not window_list:
+            return None, "No windows found on the desktop."
+
+        windows = {window.name: window for window in window_list}
+        matched_window = process.extractOne(name, list(windows.keys()), score_cutoff=70)
+        if matched_window is None:
+            return None, f"Application {name.title()} not found."
+        window_name, _ = matched_window
+        return windows.get(window_name), ""
+
     def resize_app(
-        self, size: tuple[int, int] = None, loc: tuple[int, int] = None
+        self, name: str | None = None, size: tuple[int, int] = None, loc: tuple[int, int] = None
     ) -> tuple[str, int]:
-        active_window = self.desktop_state.active_window
-        if active_window is None:
-            return "No active window found", 1
-        if active_window.status == Status.MINIMIZED:
-            return f"{active_window.name} is minimized", 1
-        elif active_window.status == Status.MAXIMIZED:
-            return f"{active_window.name} is maximized", 1
+        if name is not None:
+            target_window, error = self._find_window_by_name(name, refresh_state=True)
+            if target_window is None:
+                return error, 1
         else:
-            window_control = uia.ControlFromHandle(active_window.handle)
+            # If no name provided, try to resize the active window
+            target_window = self.desktop_state.active_window if self.desktop_state else None
+
+            if target_window is None:
+                return "No active window found", 1
+
+        # target_window is guaranteed to be non-None here
+        if target_window.status == Status.MINIMIZED:
+            return f"{target_window.name} is minimized", 1
+        elif target_window.status == Status.MAXIMIZED:
+            return f"{target_window.name} is maximized", 1
+        else:
+            window_control = uia.ControlFromHandle(target_window.handle)
             if loc is None:
                 x = window_control.BoundingRectangle.left
                 y = window_control.BoundingRectangle.top
@@ -338,7 +374,7 @@ class Desktop:
             x, y = loc
             width, height = size
             window_control.MoveWindow(x, y, width, height)
-            return (f"{active_window.name} resized to {width}x{height} at {x},{y}.", 0)
+            return (f"{target_window.name} resized to {width}x{height} at {x},{y}.", 0)
 
     def is_app_running(self, name: str) -> bool:
         windows, _ = self.get_windows()
@@ -376,7 +412,7 @@ class Desktop:
                     return f"{name.title()} launched."
                 return f"Launching {name.title()} sent, but window not detected yet."
             case "resize":
-                response, status = self.resize_app(size=size, loc=loc)
+                response, status = self.resize_app(name=name, size=size, loc=loc)
                 if status != 0:
                     return response
                 else:
@@ -420,36 +456,18 @@ class Desktop:
 
     def switch_app(self, name: str):
         try:
-            # Refresh state if desktop_state is None or has no windows
-            if self.desktop_state is None or not self.desktop_state.windows:
-                self.get_state()
-            if self.desktop_state is None:
-                return ("Failed to get desktop state. Please try again.", 1)
+            window, error = self._find_window_by_name(name)
+            if window is None:
+                return error, 1
 
-            window_list = [
-                w
-                for w in [self.desktop_state.active_window] + self.desktop_state.windows
-                if w is not None
-            ]
-            if not window_list:
-                return ("No windows found on the desktop.", 1)
-
-            windows = {window.name: window for window in window_list}
-            matched_window: tuple[str, float] | None = process.extractOne(
-                name, list(windows.keys()), score_cutoff=70
-            )
-            if matched_window is None:
-                return (f"Application {name.title()} not found.", 1)
-            window_name, _ = matched_window
-            window = windows.get(window_name)
             target_handle = window.handle
 
             was_minimized = uia.IsIconic(target_handle)
             self.bring_window_to_top(target_handle)
             if was_minimized:
-                content = f"Restored {window_name.title()} from minimized and switched to it."
+                content = f"Restored {window.name.title()} from minimized and switched to it."
             else:
-                content = f"Switched to {window_name.title()} window."
+                content = f"Switched to {window.name.title()} window."
             return content, 0
         except Exception as e:
             return (f"Error switching app: {str(e)}", 1)
