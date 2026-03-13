@@ -322,6 +322,7 @@ class Desktop:
             screenshot_region=screenshot_region,
             screenshot_displays=display_indices,
             tree_state=tree_state,
+            screenshot_backend=getattr(self, "_last_screenshot_backend", None) if use_vision else None,
         )
         if profile_enabled:
             state_build_ms = (perf_counter() - stage_started_at) * 1000
@@ -1101,7 +1102,9 @@ class Desktop:
         backend = self._get_screenshot_backend()
         if backend in {"auto", "dxcam"} and capture_rect is not None and dxcam is not None:
             try:
-                return self._capture_with_dxcam(capture_rect)
+                img = self._capture_with_dxcam(capture_rect)
+                self._last_screenshot_backend = "dxcam"
+                return img
             except Exception:
                 logger.warning(
                     "DXGI capture failed for region %s; falling back to Pillow",
@@ -1111,6 +1114,7 @@ class Desktop:
         elif backend == "dxcam" and dxcam is None:
             logger.warning("DXGI capture requested but dxcam is not installed; falling back to Pillow")
 
+        self._last_screenshot_backend = "pillow"
         return self._capture_with_pillow(capture_rect)
 
     def get_annotated_screenshot(

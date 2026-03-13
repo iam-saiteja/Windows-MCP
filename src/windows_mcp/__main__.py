@@ -144,6 +144,8 @@ def _build_snapshot_response(
     if desktop_state.screenshot_displays:
         metadata_text += f"Displays: {','.join(str(index) for index in desktop_state.screenshot_displays)}\n"
         metadata_text += "Coordinate Space: Virtual desktop coordinates\n"
+    if desktop_state.screenshot_backend:
+        metadata_text += f"Screenshot Backend: {desktop_state.screenshot_backend}\n"
     if ui_detail_note:
         metadata_text += f"{ui_detail_note}\n"
 
