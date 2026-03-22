@@ -12,6 +12,8 @@ import time
 from fastmcp.utilities.types import Image
 from textwrap import dedent
 from windows_mcp.desktop.service import Desktop, Size
+from windows_mcp.desktop.utils import remove_private_use_chars
+
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +129,12 @@ def build_snapshot_response(
     active_desktop = capture_result["active_desktop"]
     all_desktops = capture_result["all_desktops"]
     screenshot_bytes = capture_result["screenshot_bytes"]
+
+    # Some applications (e.g. VS Code) embed Unicode Private Use Area characters in the
+    # Automation Element Name property of certain UI elements (e.g. navigation bar items in VS Code).
+    # These characters can cause display issues, so we strip them out before rendering.
+    interactive_elements = remove_private_use_chars(interactive_elements)
+    scrollable_elements = remove_private_use_chars(scrollable_elements)
 
     metadata_text = f"Cursor Position: {desktop_state.cursor_position}\n"
     if desktop_state.screenshot_original_size:

@@ -1,4 +1,4 @@
-"""Desktop utilities. Centralized input sanitization for PowerShell commands."""
+"""Desktop utilities. Input sanitization and text processing helpers."""
 
 import os
 import re
@@ -7,6 +7,12 @@ from xml.sax.saxutils import escape as xml_escape
 import pywintypes
 from win32com.shell import shell
 
+__all__ = [
+    "ps_quote",
+    "ps_quote_for_xml",
+    "resolve_known_folder_guid_path",
+    "remove_private_use_chars",
+]
 
 def ps_quote(value: str) -> str:
     """Wrap value in PowerShell single-quoted string literal (escapes ' as '')."""
@@ -52,3 +58,17 @@ def resolve_known_folder_guid_path(path_text: str) -> str:
         return path_text
 
     return base if not rest else os.path.join(base, rest)
+
+
+_PRIVATE_USE_RE = re.compile(
+    r'['
+    r'\uE000-\uF8FF'          # BMP Private Use Area
+    r'\U000F0000-\U000FFFFD'  # Supplementary Private Use Area-A
+    r'\U00100000-\U0010FFFD'  # Supplementary Private Use Area-B
+    r']+'
+)
+
+
+def remove_private_use_chars(text: str) -> str:
+    """Remove Unicode Private Use Area characters that may cause rendering issues."""
+    return _PRIVATE_USE_RE.sub('', text)
