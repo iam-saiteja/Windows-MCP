@@ -13,10 +13,28 @@ import os
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+_COMTYPES_ORD_TYPEERROR_FRAGMENT = "ord() expected a character"
+_COMTYPES_AUTOMATION_PATH_FRAGMENT = "comtypes/automation.py"
+
 
 def _snapshot_profile_enabled() -> bool:
     value = os.getenv("WINDOWS_MCP_PROFILE_SNAPSHOT", "")
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_comtypes_variant_ord_typeerror(error: TypeError) -> bool:
+    message = str(error)
+    if _COMTYPES_ORD_TYPEERROR_FRAGMENT not in message:
+        return False
+
+    traceback_ref = error.__traceback__
+    while traceback_ref is not None:
+        filename = traceback_ref.tb_frame.f_code.co_filename.replace("\\", "/").lower()
+        if filename.endswith(_COMTYPES_AUTOMATION_PATH_FRAGMENT):
+            return True
+        traceback_ref = traceback_ref.tb_next
+
+    return False
 
 if TYPE_CHECKING:
     from windows_mcp.desktop.service import Desktop
@@ -572,23 +590,22 @@ class Tree:
                         # normal non-dialog children
                         self.tree_traversal(child, window_bounding_box, window_name, is_browser, interactive_nodes, scrollable_nodes, dom_interactive_nodes, dom_informative_nodes, is_dom=is_dom, is_dialog=is_dialog, element_cache_req=element_cache_req, children_cache_req=children_cache_req)
                 except TypeError as e:
-                    # comtypes VARIANT marshaling can raise TypeError when a
-                    # UI element's COM property contains a multi-byte c_char
-                    # value (e.g. non-ASCII window titles or accessibility
-                    # properties). Skip the problematic element and continue
-                    # traversing the remaining siblings.
-                    # See: https://github.com/CursorTouch/Windows-MCP/issues/147
+                    if not _is_comtypes_variant_ord_typeerror(e):
+                        raise
+
                     logger.warning(
-                        "Skipping UI element in '%s' due to COM marshaling error: %s",
+                        "Skipping UI element in '%s' due to comtypes VARIANT marshaling TypeError: %s",
                         window_name,
                         e,
                     )
                     continue
         except TypeError as e:
-            # Guard against comtypes VARIANT marshaling errors at the current
-            # node level (same root cause as the per-child guard above).
+            if not _is_comtypes_variant_ord_typeerror(e):
+                logger.error(f"Error in tree_traversal: {e}", exc_info=True)
+                raise
+
             logger.warning(
-                "Skipping subtree in '%s' due to COM marshaling error: %s",
+                "Skipping subtree in '%s' due to comtypes VARIANT marshaling TypeError: %s",
                 window_name,
                 e,
             )
