@@ -1271,23 +1271,6 @@ class Desktop:
             dom_informative_nodes=tree_state.dom_informative_nodes if filtered_dom_node else [],
         )
 
-    @staticmethod
-    def _build_crop_box(capture_rect: uia.Rect, padding: int = 0) -> tuple[int, int, int, int]:
-        left_offset, top_offset, _, _ = uia.GetVirtualScreenRect()
-        return (
-            capture_rect.left - left_offset + padding,
-            capture_rect.top - top_offset + padding,
-            capture_rect.right - left_offset + padding,
-            capture_rect.bottom - top_offset + padding,
-        )
-
-    def _crop_screenshot(
-        self, screenshot: Image.Image, capture_rect: uia.Rect | None
-    ) -> Image.Image:
-        if capture_rect is None:
-            return screenshot
-        return screenshot.crop(self._build_crop_box(capture_rect))
-
     def send_notification(self, title: str, message: str, app_id: str) -> str:
         """Send a Windows toast notification with a title and message.
 

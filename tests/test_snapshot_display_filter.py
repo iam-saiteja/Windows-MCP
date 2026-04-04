@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PIL import Image
 
+from windows_mcp.desktop.screenshot import _crop_screenshot  # noqa
 from windows_mcp.desktop.service import Desktop
 from windows_mcp.desktop.views import DesktopState, Size, Status, Window
 from windows_mcp.tree.views import BoundingBox, Center, ScrollElementNode, TreeElementNode, TreeState
@@ -133,12 +134,9 @@ class TestDisplayFiltering:
 
     def test_crop_screenshot_to_display_region(self, desktop):
         screenshot = Image.new("RGB", (3840, 1080), "white")
-        with patch("windows_mcp.desktop.service.uia.GetVirtualScreenRect") as mock_virtual_rect:
+        with patch("windows_mcp.desktop.screenshot.uia.GetVirtualScreenRect") as mock_virtual_rect:
             mock_virtual_rect.return_value = (0, 0, 3840, 1080)
-            cropped = desktop._crop_screenshot(
-                screenshot,
-                Rect(1920, 0, 3840, 1080),
-            )
+            cropped = _crop_screenshot(screenshot, Rect(1920, 0, 3840, 1080))
         assert cropped.size == (1920, 1080)
 
     def test_get_screenshot_uses_display_bbox_for_direct_capture(self, desktop):
