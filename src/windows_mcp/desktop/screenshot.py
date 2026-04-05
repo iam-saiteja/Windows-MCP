@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Callable
 
 from PIL import Image, ImageGrab
 
@@ -52,14 +51,11 @@ def get_screenshot_backend() -> str:
     return "auto"
 
 
-def resolve_dxcam_region(
-        capture_rect,
-        get_monitors_rect: Callable[[], list],
-) -> tuple[int, tuple[int, int, int, int] | None] | None:
+def resolve_dxcam_region(capture_rect) -> tuple[int, tuple[int, int, int, int] | None] | None:
     if capture_rect is None:
         return 0, None
 
-    monitor_rects = get_monitors_rect()
+    monitor_rects = uia.GetMonitorsRect()
     for output_idx, monitor_rect in enumerate(monitor_rects):
         if (
                 monitor_rect.left <= capture_rect.left
@@ -91,11 +87,8 @@ def get_dxcam_camera(output_idx: int):
     return camera
 
 
-def capture_with_dxcam(
-        capture_rect,
-        get_monitors_rect: Callable[[], list],
-) -> Image.Image:
-    resolved = resolve_dxcam_region(capture_rect, get_monitors_rect)
+def capture_with_dxcam(capture_rect) -> Image.Image:
+    resolved = resolve_dxcam_region(capture_rect)
     if resolved is None:
         raise ValueError("DXGI capture supports only regions fully contained within one display")
 
@@ -152,11 +145,7 @@ def _auto_backend_chain() -> list[str]:
     return ["dxcam", "mss", "pillow"]
 
 
-def capture(
-        capture_rect,
-        get_monitors_rect: Callable[[], list],
-        backend: str | None = None,
-) -> tuple[Image.Image, str]:
+def capture(capture_rect, backend: str | None = None) -> tuple[Image.Image, str]:
     selected = backend or get_screenshot_backend()
     chain = _auto_backend_chain() if selected == "auto" else [selected]
 
@@ -167,21 +156,12 @@ def capture(
                     continue
                 if dxcam is None:
                     continue
-                return (
-                    capture_with_dxcam(
-                        capture_rect,
-                        get_monitors_rect,
-                    ),
-                    "dxcam",
-                )
+                return capture_with_dxcam(capture_rect), "dxcam"
 
             if backend_name == "mss":
                 if mss is None:
                     continue
-                return (
-                    capture_with_mss(capture_rect),
-                    "mss",
-                )
+                return capture_with_mss(capture_rect), "mss"
 
             if backend_name == "pillow":
                 return capture_with_pillow(capture_rect), "pillow"

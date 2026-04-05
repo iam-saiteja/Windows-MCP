@@ -1019,10 +1019,7 @@ class Desktop:
         )
 
     def get_screenshot(self, capture_rect: uia.Rect | None = None) -> Image.Image:
-        image, used_backend = screenshot_capture.capture(
-            capture_rect=capture_rect,
-            get_monitors_rect=uia.GetMonitorsRect,
-        )
+        image, used_backend = screenshot_capture.capture(capture_rect)
         self._last_screenshot_backend = used_backend
         return image
 

@@ -165,7 +165,7 @@ class TestDisplayFiltering:
         monkeypatch.setattr("windows_mcp.desktop.screenshot.dxcam", fake_dxcam)
         monkeypatch.setattr("windows_mcp.desktop.screenshot._DXCAM_CAMERA_CACHE", {})
         monkeypatch.setattr(
-            "windows_mcp.desktop.service.uia.GetMonitorsRect",
+            "windows_mcp.desktop.screenshot.uia.GetMonitorsRect",
             lambda: [Rect(0, 0, 1920, 1080), Rect(1920, 0, 3840, 1080)],
         )
         with patch(
@@ -186,7 +186,7 @@ class TestDisplayFiltering:
         monkeypatch.setenv("WINDOWS_MCP_SCREENSHOT_BACKEND", "dxcam")
         monkeypatch.setattr("windows_mcp.desktop.screenshot.dxcam", fake_dxcam)
         monkeypatch.setattr(
-            "windows_mcp.desktop.service.uia.GetMonitorsRect",
+            "windows_mcp.desktop.screenshot.uia.GetMonitorsRect",
             lambda: [Rect(0, 0, 1920, 1080), Rect(1920, 0, 3840, 1080)],
         )
         with patch("windows_mcp.desktop.screenshot.ImageGrab.grab") as mock_grab:
