@@ -1,0 +1,24 @@
+{
+  "name": "windows-mcp",
+  "version": "0.1.0",
+  "description": "Windows computer use from Codex via MCP",
+  "author": {
+    "name": "CursorTouch",
+    "url": "https://github.com/CursorTouch/Windows-MCP"
+  },
+  "homepage": "https://github.com/CursorTouch/Windows-MCP",
+  "repository": "https://github.com/CursorTouch/Windows-MCP",
+  "keywords": [
+    "mcp",
+    "codex"
+  ],
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Windows MCP",
+    "shortDescription": "Windows computer use from Codex via MCP",
+    "longDescription": "MCP Server for Computer Use in Windows. Control Windows applications and desktop from Codex.",
+    "category": "System",
+    "websiteURL": "https://github.com/CursorTouch/Windows-MCP"
+  }
+}
