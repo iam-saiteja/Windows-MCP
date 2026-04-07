@@ -359,6 +359,24 @@ npm install -g @anthropic-ai/claude-code
   ```
 
   To verify the server is registered, run `claude mcp list`. Inside Claude Code, use `/mcp` to check server status.
+
+  **WSL (Windows Subsystem for Linux)**
+
+  If you run Claude Code from WSL, the MCP server must still execute on the Windows side (it needs Windows APIs for UI automation). Use `powershell.exe` as the command to bridge WSL and Windows:
+
+  1. Install `uv` on **Windows** (from a PowerShell terminal):
+  ```powershell
+  irm https://astral.sh/uv/install.ps1 | iex
+  ```
+
+  2. From your **WSL terminal**, register the server:
+  ```shell
+  claude mcp add windows-mcp --transport stdio -s user -- powershell.exe -Command "C:\Users\<user>\.local\bin\uvx.exe windows-mcp"
+  ```
+
+  Replace `<user>` with your Windows username. The `-s user` flag makes the server available across all projects.
+
+  3. Restart Claude Code and verify with `/mcp`.
 </details>
 
 ---
