@@ -152,7 +152,7 @@ Get-ItemProperty 'HKCU:\Control Panel\Desktop\WindowMetrics' -Name AppliedDPI -E
 ```
 
 Also call Screenshot once — its `Screenshot Original Size` cross-checks the DPI value,
-and its output includes the Active Virtual Desktop.
+and its output includes `Active Desktop` and `All Desktops`.
 
 ### Pre-Test Step 2: Prepare Environment
 
@@ -292,7 +292,7 @@ the markdown structure.
 **Date:** {timestamp}
 **Tool:** {ToolName}
 **Total Test Cases:** {N}
-**Passed:** {P} | **Soft Passed:** {SP} | **Failed:** {F} | **Errors:** {E} | **Skipped:** {S}
+**PASS:** {P} | **SOFT PASS:** {SP} | **FAIL:** {F} | **ERROR:** {E} | **SKIP:** {S}
 **Overall Pass Rate:** {(P+SP)/N * 100}%
 
 ---
@@ -456,7 +456,9 @@ To avoid polluting the system or interfering with user state:
   (e.g., Notepad) to receive input. Don't interact with user's active work.
   See also Pre-Test Step 2 for IME state handling — switch to English input mode before testing
   and restore the original state in final teardown.
-- **Read-only tools (Screenshot, Snapshot, Scrape, Notification)**: Safe to run freely.
+- **Read-only tools (Screenshot, Snapshot, Scrape)**: Safe to run freely.
+- **Notification tests**: User-visible (sends Windows toasts). Avoid repeated or unnecessary
+  notifications. Prefer a single clearly labeled test notification per test case.
 - **PowerShell tests**: Use read-only commands where possible.
 
 ---
