@@ -3,7 +3,7 @@
 Tests the ``capture()`` public API and each backend class directly,
 without going through ``Desktop.get_screenshot``.
 """
-
+from typing import Tuple
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -230,7 +230,7 @@ class TestMssBackend:
         monkeypatch.setattr(screenshot, "mss", MagicMock())
         assert _MssBackend().is_available(MONITOR_0) is True
 
-    def _make_fake_mss(self, width: int, height: int) -> MagicMock:
+    def _make_fake_mss(self, width: int, height: int) -> Tuple[MagicMock, MagicMock]:
         fake_shot = MagicMock()
         fake_shot.size = (width, height)
         fake_shot.rgb = b"\xff\x00\x00" * (width * height)
@@ -258,6 +258,23 @@ class TestMssBackend:
         assert isinstance(result, Image.Image)
         call_args = fake_sct.grab.call_args[0][0]
         assert call_args == {"left": 100, "top": 200, "width": 500, "height": 400}
+
+    def test_capture_with_non_origin_rect_returns_correct_content(self, monkeypatch):
+        """Verify mss capture of a non-primary monitor region is not corrupted by double-crop."""
+        width, height = 1920, 1080
+        fake_module, _ = self._make_fake_mss(width, height)
+        monkeypatch.setattr(screenshot, "mss", fake_module)
+        monkeypatch.setattr(
+            "windows_mcp.desktop.screenshot.uia.GetVirtualScreenRect",
+            lambda: (0, 0, 3840, 1080),
+        )
+
+        # capture_rect on second monitor — image origin is (0,0), not (1920,0)
+        result = _MssBackend().capture(Rect(1920, 0, 3840, 1080))
+
+        assert result.size == (width, height)
+        # The image should retain actual content, not be black from out-of-bounds crop.
+        assert result.getbbox() is not None
 
     def test_capture_without_rect_uses_full_screen(self, monkeypatch):
         fake_module, fake_sct = self._make_fake_mss(1920, 1080)
@@ -295,6 +312,24 @@ class TestPillowBackend:
 
         result = _PillowBackend().capture(None)
         assert result.size == (1920, 1080)
+        assert result.getbbox() is not None
+
+    def test_capture_with_non_origin_rect_returns_correct_content(self, monkeypatch):
+        """Verify pillow capture of a non-primary monitor region is not corrupted by double-crop."""
+        fake_img = Image.new("RGB", (1920, 1080), "blue")
+        monkeypatch.setattr(
+            screenshot, "ImageGrab", MagicMock(grab=MagicMock(return_value=fake_img))
+        )
+        monkeypatch.setattr(
+            "windows_mcp.desktop.screenshot.uia.GetVirtualScreenRect",
+            lambda: (0, 0, 3840, 1080),
+        )
+
+        # capture_rect on second monitor — ImageGrab.grab(bbox=...) already returns the region
+        result = _PillowBackend().capture(Rect(1920, 0, 3840, 1080))
+
+        assert result.size == (1920, 1080)
+        # The image should retain actual content, not be black from out-of-bounds crop.
         assert result.getbbox() is not None
 
     def test_capture_falls_back_on_grab_error_with_rect(self, monkeypatch):

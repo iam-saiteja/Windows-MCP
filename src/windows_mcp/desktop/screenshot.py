@@ -175,10 +175,13 @@ class _PillowBackend(_ScreenshotBackend):
                     "Failed to capture selected region directly, "
                     "falling back to virtual screen crop"
                 )
+                # Fallback: grab full virtual screen then crop to the requested region.
                 return _crop_screenshot(ImageGrab.grab(all_screens=True), capture_rect)
             logger.warning("Failed to capture virtual screen, using primary screen")
             screenshot = ImageGrab.grab()
-        return _crop_screenshot(screenshot, capture_rect)
+        # Success path: ImageGrab.grab(bbox=...) already returned the exact region,
+        # so no further cropping is needed.
+        return screenshot
 
 
 class _MssBackend(_ScreenshotBackend):
@@ -205,7 +208,9 @@ class _MssBackend(_ScreenshotBackend):
                 }
             raw = sct.grab(monitor)
             image = Image.frombytes("RGB", raw.size, raw.rgb)
-        return _crop_screenshot(image, capture_rect)
+        # mss.grab(monitor) already captures exactly the requested region,
+        # so no further cropping is needed.
+        return image
 
 
 # ---------------------------------------------------------------------------

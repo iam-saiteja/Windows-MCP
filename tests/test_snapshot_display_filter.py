@@ -190,7 +190,7 @@ class TestDisplayFiltering:
             lambda: [Rect(0, 0, 1920, 1080), Rect(1920, 0, 3840, 1080)],
         )
         with patch("windows_mcp.desktop.screenshot.ImageGrab.grab") as mock_grab:
-            mock_grab.return_value = Image.new("RGB", (1920, 1080), "white")
+            mock_grab.return_value = Image.new("RGB", (3840, 1080), "white")
             screenshot = desktop.get_screenshot(capture_rect=capture_rect)
 
         assert screenshot.size == (3840, 1080)
