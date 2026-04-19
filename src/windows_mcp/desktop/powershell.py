@@ -76,8 +76,8 @@ def _win32_name(dll: str, func: str) -> str:
     Only suitable for APIs with the (buffer, &size) calling convention,
     e.g. kernel32.GetComputerNameW and advapi32.GetUserNameW.
     """
-    buf = ctypes.create_unicode_buffer(256)
-    size = ctypes.wintypes.DWORD(256)
+    buf = ctypes.create_unicode_buffer(257)
+    size = ctypes.wintypes.DWORD(257)
     fn = getattr(ctypes.windll, dll)
     if getattr(fn, func)(buf, ctypes.byref(size)):
         return buf.value
@@ -112,7 +112,8 @@ def _prepare_env() -> dict[str, str]:
         # Supplement missing vars. User-level (HKCU) takes precedence over
         # system-level (HKLM) for same-named keys, matching Windows' resolution order.
         for name, value in {**machine_vars, **user_vars}.items():
-            env.setdefault(name, value)
+            if not env.get(name):
+                env[name] = value
 
         # PATH: inherited entries keep their priority; registry entries are
         # appended to fill in anything missing (e.g. stripped MCP host env).
@@ -121,12 +122,12 @@ def _prepare_env() -> dict[str, str]:
 
         # PATHEXT: use registry value if the inherited one looks incomplete
         effective_pathext = user_pathext or machine_pathext
-        if effective_pathext and ".EXE" not in env.get("PATHEXT", ""):
+        if effective_pathext and ".EXE" not in env.get("PATHEXT", "").upper():
             env["PATHEXT"] = effective_pathext
 
     except Exception:
-        logger.debug("Failed to read environment from registry")
-        if ".EXE" not in env.get("PATHEXT", ""):
+        logger.debug("Failed to read environment from registry", exc_info=True)
+        if ".EXE" not in env.get("PATHEXT", "").upper():
             env["PATHEXT"] = _FALLBACK_PATHEXT
 
     # Dynamic variables not stored in registry — only fill if missing
