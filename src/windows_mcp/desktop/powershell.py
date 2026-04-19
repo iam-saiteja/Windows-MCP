@@ -34,6 +34,7 @@ def _prepare_env() -> dict[str, str]:
         import winreg
 
         # System-level environment variables
+        machine_pathext = ""
         with winreg.OpenKey(
             winreg.HKEY_LOCAL_MACHINE,
             r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
@@ -42,8 +43,11 @@ def _prepare_env() -> dict[str, str]:
             while True:
                 try:
                     name, value, _ = winreg.EnumValue(key, i)
-                    if name.upper() == "PATH":
+                    upper = name.upper()
+                    if upper == "PATH":
                         machine_path = value
+                    elif upper == "PATHEXT":
+                        machine_pathext = value
                     else:
                         env.setdefault(name, value)
                     i += 1
@@ -73,6 +77,10 @@ def _prepare_env() -> dict[str, str]:
         if registry_path:
             env["PATH"] = ";".join(filter(None, [registry_path, env.get("PATH", "")]))
 
+        # PATHEXT: use registry value if the inherited one looks incomplete (e.g. venv strips it)
+        if machine_pathext and ".EXE" not in env.get("PATHEXT", ""):
+            env["PATHEXT"] = machine_pathext
+
     except Exception:
         logger.debug("Failed to read environment from registry")
         if ".EXE" not in env.get("PATHEXT", ""):
@@ -90,7 +98,6 @@ def _prepare_env() -> dict[str, str]:
                 env["USERNAME"] = buf.value
         except Exception as e:
             logger.debug("Failed to get USERNAME via Win32 API: %s", e)
-            pass
 
     user_profile = os.path.expanduser("~")
     env.setdefault("USERPROFILE", user_profile)
