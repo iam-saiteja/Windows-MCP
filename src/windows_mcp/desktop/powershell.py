@@ -5,6 +5,7 @@ import ctypes
 import ctypes.wintypes
 import logging
 import os
+import winreg
 import shutil
 import subprocess
 
@@ -20,8 +21,6 @@ def _read_reg_env(hkey: int, subkey: str) -> tuple[dict[str, str], str, str]:
     (excluding PATH/PATHEXT), and *path*/*pathext* are the raw expanded
     values for those two special keys (empty string if absent).
     """
-    import winreg
-
     variables: dict[str, str] = {}
     path = ""
     pathext = ""
@@ -32,7 +31,16 @@ def _read_reg_env(hkey: int, subkey: str) -> tuple[dict[str, str], str, str]:
             while True:
                 try:
                     name, value, reg_type = winreg.EnumValue(key, i)
+                    if reg_type not in (winreg.REG_SZ, winreg.REG_EXPAND_SZ):
+                        i += 1
+                        continue
                     if reg_type == winreg.REG_EXPAND_SZ:
+                        # Note: ExpandEnvironmentStrings uses the current process
+                        # environment, which may be stripped by the MCP host. References
+                        # to missing vars (e.g. %COMPUTERNAME%) won't expand correctly.
+                        # In practice this is acceptable: most REG_EXPAND_SZ values under
+                        # HKLM/HKCU\Environment reference %SystemRoot% or %USERPROFILE%
+                        # which are almost always present.
                         value = winreg.ExpandEnvironmentStrings(value)
                     upper = name.upper()
                     if upper == "PATH":
@@ -63,7 +71,11 @@ def _dedup_path(*segments: str) -> str:
 
 
 def _win32_name(dll: str, func: str) -> str:
-    """Call a Win32 GetXxxNameW function that writes into a WCHAR buffer."""
+    """Call a Win32 GetXxxNameW(LPWSTR, LPDWORD) function.
+
+    Only suitable for APIs with the (buffer, &size) calling convention,
+    e.g. kernel32.GetComputerNameW and advapi32.GetUserNameW.
+    """
     buf = ctypes.create_unicode_buffer(256)
     size = ctypes.wintypes.DWORD(256)
     fn = getattr(ctypes.windll, dll)
@@ -85,13 +97,12 @@ def _prepare_env() -> dict[str, str]:
       2. User-level env vars from the registry (HKCU)
       3. Dynamic vars (COMPUTERNAME, USERNAME, etc.) via Win32 API
     Existing values in os.environ are never overwritten, only missing ones
-    are supplemented. PATH is special-cased: registry paths are prepended.
+    are supplemented. PATH is special-cased: inherited entries keep their
+    priority and registry entries are appended to fill in missing paths.
     """
     env = os.environ.copy()
 
     try:
-        import winreg
-
         machine_vars, machine_path, machine_pathext = _read_reg_env(
             winreg.HKEY_LOCAL_MACHINE,
             r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
@@ -103,9 +114,10 @@ def _prepare_env() -> dict[str, str]:
         for name, value in {**machine_vars, **user_vars}.items():
             env.setdefault(name, value)
 
-        # PATH: prepend registry paths, deduplicated
+        # PATH: inherited entries keep their priority; registry entries are
+        # appended to fill in anything missing (e.g. stripped MCP host env).
         if machine_path or user_path:
-            env["PATH"] = _dedup_path(machine_path, user_path, env.get("PATH", ""))
+            env["PATH"] = _dedup_path(env.get("PATH", ""), machine_path, user_path)
 
         # PATHEXT: use registry value if the inherited one looks incomplete
         effective_pathext = user_pathext or machine_pathext
@@ -139,6 +151,10 @@ def _prepare_env() -> dict[str, str]:
     drive, tail = os.path.splitdrive(user_profile)
     env.setdefault("HOMEDRIVE", drive)
     env.setdefault("HOMEPATH", tail)
+    # On domain-joined machines USERDOMAIN is the NetBIOS domain name (e.g.
+    # "CORP"), not the computer name. This fallback is only correct for workgroup
+    # machines. USERDOMAIN is a session variable set at logon and is unlikely to
+    # be missing on domain-joined hosts, so this is an acceptable last resort.
     env.setdefault("USERDOMAIN", env.get("COMPUTERNAME", ""))
 
     return env
