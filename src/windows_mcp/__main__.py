@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from windows_mcp.auth import AuthClient
 from windows_mcp.config import is_debug, enable_debug
 from fastmcp import FastMCP
 from starlette.middleware import Middleware
@@ -140,18 +139,6 @@ def __getattr__(name: str):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-def _get_remote_proxy_types():
-    from fastmcp.client.transports import StreamableHttpTransport
-    from fastmcp.server.providers.proxy import ProxyClient
-
-    return StreamableHttpTransport, ProxyClient
-
-
-@dataclass
-class Config:
-    mode: str
-    sandbox_id: str = field(default='')
-    api_key: str = field(default='')
 
 
 class Transport(Enum):
@@ -163,7 +150,6 @@ class Transport(Enum):
 
 class Mode(Enum):
     LOCAL = "local"
-    REMOTE = "remote"
     def __str__(self):
         return self.value
 
@@ -184,33 +170,6 @@ def _run_local_mode(transport: str, host: str, port: int) -> None:
         case _:
             raise ValueError(f"Invalid transport: {transport}")
 
-
-def _run_remote_mode(config: Config, transport: str, host: str, port: int) -> None:
-    if not config.sandbox_id:
-        raise ValueError("SANDBOX_ID is required for MODE: remote")
-    if not config.api_key:
-        raise ValueError("API_KEY is required for MODE: remote")
-
-    client = AuthClient(api_key=config.api_key, sandbox_id=config.sandbox_id)
-    client.authenticate()
-    streamable_http_transport, proxy_client = _get_remote_proxy_types()
-    backend = streamable_http_transport(url=client.proxy_url, headers=client.proxy_headers)
-    proxy_mcp = FastMCP.as_proxy(proxy_client(backend), name="windows-mcp")
-    _add_cors_options_handlers(proxy_mcp)
-
-    match transport:
-        case Transport.STDIO.value:
-            proxy_mcp.run(transport=Transport.STDIO.value, show_banner=False)
-        case Transport.SSE.value | Transport.STREAMABLE_HTTP.value:
-            proxy_mcp.run(
-                transport=transport,
-                host=host,
-                port=port,
-                show_banner=False,
-                middleware=_http_middleware(),
-            )
-        case _:
-            raise ValueError(f"Invalid transport: {transport}")
 
 
 @click.command()
@@ -248,20 +207,9 @@ def main(transport, host, port, debug):
     if is_debug():
         logging.basicConfig(level=logging.DEBUG)
 
-    config = Config(
-        mode=os.getenv("MODE", Mode.LOCAL.value).lower(),
-        sandbox_id=os.getenv("SANDBOX_ID", ''),
-        api_key=os.getenv("API_KEY", '')
-    )
-    logger.debug("Starting windows-mcp (mode=%s, transport=%s)", config.mode, transport)
+    logger.debug("Starting windows-mcp (mode=local, transport=%s)", transport)
     try:
-        match config.mode:
-            case Mode.LOCAL.value:
-                _run_local_mode(transport=transport, host=host, port=port)
-            case Mode.REMOTE.value:
-                _run_remote_mode(config=config, transport=transport, host=host, port=port)
-            case _:
-                raise ValueError(f"Invalid mode: {config.mode}")
+        _run_local_mode(transport=transport, host=host, port=port)
         logger.debug("Server shut down normally")
     except Exception:
         logger.error("Server exiting due to unhandled exception", exc_info=True)

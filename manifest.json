@@ -29,9 +29,6 @@
       ],
       "env": {
         "ANONYMIZED_TELEMETRY": "${user_config.anonymized_telemetry}",
-        "MODE": "${user_config.mode}",
-        "SANDBOX_ID": "${user_config.sandbox_id}",
-        "API_KEY": "${user_config.api_key}",
         "WINDOWS_MCP_PROFILE_SNAPSHOT": "${user_config.profile_snapshot}",
         "WINDOWS_MCP_SCREENSHOT_BACKEND": "${user_config.screenshot_backend}",
         "WINDOWS_MCP_DEBUG": "${user_config.debug}",
@@ -42,25 +39,6 @@
     }
   },
   "user_config": {
-    "mode": {
-      "type": "string",
-      "title": "Mode (local or remote)",
-      "description": "Set to 'local' to run directly on your machine, or 'remote' to use cloud-hosted Windows automation via windowsmcp.io. In remote mode the extension acts only as a lightweight proxy, so no local Windows automation build should be required. Remote mode requires a Sandbox ID and API Key from the dashboard at windowsmcp.io.",
-      "required": false,
-      "default": "local"
-    },
-    "sandbox_id": {
-      "type": "string",
-      "title": "Sandbox ID",
-      "description": "The sandbox/VM identifier from the windowsmcp.io. Required when mode is set to 'remote'.",
-      "required": false
-    },
-    "api_key": {
-      "type": "string",
-      "title": "API Key",
-      "description": "Your API key from the windowsmcp.io. Required when mode is set to 'remote'.",
-      "required": false
-    },
     "anonymized_telemetry": {
       "type": "boolean",
       "title": "Anonymized Telemetry",
@@ -175,7 +153,7 @@
     },
     {
       "name": "Notification",
-      "description": "Sends a Windows toast notification with a title and message. Useful for alerting the user remotely."
+      "description": "Sends a Windows toast notification with a title and message."
     },
     {
       "name": "Registry",

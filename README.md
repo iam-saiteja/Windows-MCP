@@ -414,13 +414,9 @@ If you are configuring Windows-MCP manually via `claude_desktop_config.json` (or
 
 The target directories must exist and be writable. These settings have no effect when left unset; UV will use its built-in defaults.
 
-## 🖥️ Modes
+## 🖥️ Running
 
-Windows-MCP supports two operating modes: **Local** (default) and **Remote**.
-
-### Local Mode (Default)
-
-In local mode, Windows-MCP runs directly on your Windows machine and exposes its tools to the connected MCP client. This is the standard setup for personal use.
+Windows-MCP runs directly on your Windows machine and exposes its tools to the connected MCP client.
 
 ```shell
 # Runs with stdio transport (default)
@@ -432,40 +428,6 @@ uvx windows-mcp --transport streamable-http --host localhost --port 8000
 ```
 
 Optional environment variables can be set to customize behavior — see [Environment Variables](#-environment-variables) below.
-
-### Remote Mode
-
-In remote mode, Windows-MCP acts as a **proxy** that connects to the [windowsmcp.io](https://windowsmcp.io) enabling cloud-hosted Windows automation. This is designed for scenarios where the MCP client is remote and connects through the dashboard, which routes requests to a Windows VM running Windows-MCP.
-
-When installed as a desktop extension, remote mode should stay on that lightweight proxy path and must not require local Windows automation dependencies to build before startup.
-
-**Required environment variables:**
-
-| Variable | Description |
-|---|---|
-| `MODE` | Set to `remote` |
-| `SANDBOX_ID` | The sandbox/VM identifier from the dashboard |
-| `API_KEY` | Your Windows-MCP API key |
-
-**Example configuration:**
-
-```json
-{
-  "mcpServers": {
-    "windows-mcp": {
-      "command": "uvx",
-      "args": [
-        "windows-mcp"
-      ],
-      "env": {
-        "MODE": "remote",
-        "SANDBOX_ID": "your-sandbox-id",
-        "API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
 
 ### Transport Options
 
@@ -501,15 +463,7 @@ All variables are optional unless noted. Set them via the `env` key in `claude_d
 |---|---|---|
 | `WINDOWS_MCP_DEBUG` | `false` | Set to `1`, `true`, `yes`, or `on` to enable debug mode, which sets the log level to DEBUG for verbose output. Also available as the `--debug` CLI flag. |
 
-### Remote Mode
-
-| Variable | Default | Description |
-|---|---|---|
-| `MODE` | `local` | Set to `remote` to run as a proxy to [windowsmcp.io](https://windowsmcp.io). |
-| `SANDBOX_ID` | _(none)_ | **Required for remote mode.** The sandbox/VM identifier from the dashboard. |
-| `API_KEY` | _(none)_ | **Required for remote mode.** Your Windows-MCP API key. |
-
-**Example `claude_desktop_config.json` with all local-mode options:**
+**Example `claude_desktop_config.json` configuration:**
 
 ```json
 {
