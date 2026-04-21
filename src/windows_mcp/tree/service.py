@@ -1,4 +1,5 @@
-from windows_mcp.uia import Control, ComboBoxControl, CheckBoxControl, EditControl, ButtonControl, SliderControl, ScrollPattern, WindowControl, Rect, ExpandCollapseState, ToggleState, PatternId, PropertyId, AccessibleRoleNames, TreeScope, ControlFromHandle
+from windows_mcp.uia import Control, ComboBoxControl, CheckBoxControl, EditControl, ButtonControl, SliderControl, ScrollPattern, WindowControl, Rect, ExpandCollapseState, ToggleState, PatternId, PropertyId, AccessibleRoleNames, TreeScope, ControlFromHandle, UIAException, UIADeadElementError, from_com_error
+from _ctypes import COMError
 from windows_mcp.tree.config import INTERACTIVE_CONTROL_TYPE_NAMES, DOCUMENT_CONTROL_TYPE_NAMES, INFORMATIVE_CONTROL_TYPE_NAMES, DEFAULT_ACTIONS, INTERACTIVE_ROLES, THREAD_MAX_RETRIES
 from windows_mcp.tree.views import TreeElementNode, ScrollElementNode, TextElementNode, Center, BoundingBox, TreeState
 from windows_mcp.tree.cache_utils import CacheRequestFactory, CachedControlHelper
@@ -630,17 +631,17 @@ class Tree:
         try:
             node = ControlFromHandle(handle)
             if not node:
-                 raise Exception("Failed to create Control from handle")
+                 raise RuntimeError(f"Failed to create Control from window handle {handle:#x}")
 
             # Create fresh cache requests for this traversal session
             element_cache_req = CacheRequestFactory.create_tree_traversal_cache()
             element_cache_req.TreeScope = TreeScope.TreeScope_Element
-            
+
             children_cache_req = CacheRequestFactory.create_tree_traversal_cache()
             children_cache_req.TreeScope = TreeScope.TreeScope_Element | TreeScope.TreeScope_Children
 
             window_bounding_box=node.BoundingRectangle
-            
+
             interactive_nodes, dom_interactive_nodes, dom_informative_nodes, scrollable_nodes = [], [], [], []
             window_name=node.Name.strip()
             window_name=self.app_name_correction(window_name)
@@ -661,6 +662,13 @@ class Tree:
             else:
                 interactive_nodes.extend(dom_interactive_nodes)
                 return (interactive_nodes,scrollable_nodes,dom_informative_nodes)
+        except COMError as e:
+            uia_exc = from_com_error(e)
+            if isinstance(uia_exc, UIADeadElementError):
+                logger.debug(f"Window {handle:#x} is no longer accessible (dead element)")
+            else:
+                logger.error(f"UIA error for handle {handle:#x}: {uia_exc}")
+            raise uia_exc from e
         except Exception as e:
             logger.error(f"Error getting nodes for handle {handle}: {e}")
             raise
