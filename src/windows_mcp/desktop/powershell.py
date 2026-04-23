@@ -9,7 +9,7 @@ import winreg
 import shutil
 import subprocess
 
-from windows_mcp.desktop.utils import run_with_graceful_timeout
+from windows_mcp.desktop.utils import run_with_graceful_timeout, is_elevated
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +161,10 @@ def _prepare_env() -> dict[str, str]:
     return env
 
 
+def _is_elevated() -> bool:
+    return is_elevated()
+
+
 class PowerShellExecutor:
     """Static utility class for executing PowerShell commands."""
 
@@ -209,7 +213,14 @@ class PowerShellExecutor:
                 stdout = stdout.decode("utf-8", errors="replace")
             if isinstance(stderr, bytes):
                 stderr = stderr.decode("utf-8", errors="replace")
-            return stdout or stderr, result.returncode
+            output = stdout or stderr
+            # If the command failed with "Access is denied" and we aren't elevated, add a helpful hint
+            if result.returncode != 0 and "Access is denied" in output and not _is_elevated():
+                output += (
+                    "\n\nHINT: This command may require an elevated (Administrator) terminal. "
+                    "The Windows-MCP server is currently running at a lower integrity level."
+                )
+            return output, result.returncode
         except subprocess.TimeoutExpired:
             return "Command execution timed out", 1
         except Exception as e:
