@@ -141,12 +141,41 @@ npm install -g @anthropic-ai/mcpb
 
   **Claude Desktop MSIX (Windows Store)**
 
-  The MSIX-packaged Claude Desktop virtualizes `%APPDATA%`. Config lives at:
-  `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json`
-  (not `%APPDATA%\Claude\`). The "Edit Config" button may open the wrong file.
+  The MSIX-packaged Claude Desktop (Microsoft Store version) virtualizes `%APPDATA%`. This causes two main issues:
+  1. The config file is located at: `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\claude_desktop_config.json` (not `%APPDATA%\Claude\`).
+  2. Automatic installation from the "Claude Directory" will fail because the `${__dirname}` variable resolves to the incorrect (non-virtualized) path.
 
-  Electron apps also do not inherit PATH, so `uv`/`uvx` can fail with `spawn ENOENT`. Use the **full absolute path** to `uv.exe`:
+  **To configure Windows-MCP on the Windows Store version of Claude:**
+  
+  You must manually edit the configuration file. Note that Electron apps in the MSIX sandbox do not inherit the system `PATH`, so you must use the **full absolute path** to `uvx.exe` (or `uv.exe`).
 
+  **Option A: Using pre-installed executable**
+  1. In a terminal, run: `uv tool install windows-mcp`
+  2. Use the generated executable in your config:
+  ```json
+  {
+    "mcpServers": {
+      "windows-mcp": {
+        "command": "C:\\Users\\<user>\\.local\\bin\\windows-mcp.exe",
+        "args": []
+      }
+    }
+  }
+  ```
+
+  **Option B: Using uvx**
+  ```json
+  {
+    "mcpServers": {
+      "windows-mcp": {
+        "command": "C:\\Users\\<user>\\.local\\bin\\uvx.exe",
+        "args": ["windows-mcp"]
+      }
+    }
+  }
+  ```
+
+  **Option C: Install from Source**
   ```json
   {
     "mcpServers": {
@@ -154,7 +183,7 @@ npm install -g @anthropic-ai/mcpb
         "command": "C:\\Users\\<user>\\.local\\bin\\uv.exe",
         "args": [
           "--directory",
-          "C:\\Users\\<user>\\AppData\\Local\\Packages\\Claude_pzs8sxrjxfjjc\\LocalCache\\Roaming\\Claude\\Claude Extensions\\ant.dir.cursortouch.windows-mcp",
+          "C:\\path\\to\\Windows-MCP",
           "run",
           "windows-mcp"
         ]
@@ -163,7 +192,7 @@ npm install -g @anthropic-ai/mcpb
   }
   ```
 
-  Replace `<user>` with your username. To find `uv.exe`, run `where uv` in a terminal; common location is `%USERPROFILE%\.local\bin\uv.exe`. For PyPI install, use `args: ["run", "windows-mcp"]` instead of `--directory`/path. Save as **UTF-8 without BOM** (PowerShell `Set-Content -Encoding UTF8` adds a BOM that breaks the JSON parser).
+  Replace `<user>` with your Windows username. To find the correct paths, run `where uvx`, `where windows-mcp`, or `where uv`. Fully quit Claude Desktop (Tray → Quit) and reopen after saving the config.
 
   For additional Claude Desktop integration troubleshooting, see the [MCP documentation](https://modelcontextprotocol.io/quickstart/server#claude-for-desktop-integration-issues).
 </details>
