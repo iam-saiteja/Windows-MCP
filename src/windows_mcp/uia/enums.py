@@ -573,7 +573,7 @@ PropertyIdNames = {
 }
 
 
-class AccessibleRole:
+class AccessibleRole(IntEnum):
     """
     AccessibleRole from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.accessiblerole?view=netframework-4.8
@@ -648,7 +648,7 @@ class AccessibleRole:
 AccessibleRoleNames = {v: k for k, v in AccessibleRole.__dict__.items() if not k.startswith("_")}
 
 
-class AccessibleState:
+class AccessibleState(IntFlag):
     """
     AccessibleState from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.accessiblestates?view=netframework-4.8
@@ -704,7 +704,7 @@ class AccessibleSelection:
     RemoveSelection = 0x10
 
 
-class AnnotationType:
+class AnnotationType(IntEnum):
     """
     AnnotationType from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-annotation-type-identifiers
@@ -736,7 +736,7 @@ class AnnotationType:
     UnsyncedChange = 60015
 
 
-class NavigateDirection:
+class NavigateDirection(IntEnum):
     """
     NavigateDirection from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-navigatedirection
@@ -749,7 +749,7 @@ class NavigateDirection:
     LastChild = 4
 
 
-class DockPosition:
+class DockPosition(IntEnum):
     """
     DockPosition from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-dockposition
@@ -763,7 +763,7 @@ class DockPosition:
     None_ = 5
 
 
-class ScrollAmount:
+class ScrollAmount(IntEnum):
     """
     ScrollAmount from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-scrollamount
@@ -776,7 +776,7 @@ class ScrollAmount:
     SmallIncrement = 4
 
 
-class StyleId:
+class StyleId(IntEnum):
     """
     StyleId from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/winauto/uiauto-style-identifiers
@@ -801,7 +801,7 @@ class StyleId:
     NumberedList = 70016
 
 
-class RowOrColumnMajor:
+class RowOrColumnMajor(IntEnum):
     """
     RowOrColumnMajor from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-roworcolumnmajor
@@ -812,7 +812,7 @@ class RowOrColumnMajor:
     Indeterminate = 2
 
 
-class ExpandCollapseState:
+class ExpandCollapseState(IntEnum):
     """
     ExpandCollapseState from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-expandcollapsestate
@@ -824,7 +824,7 @@ class ExpandCollapseState:
     LeafNode = 3
 
 
-class OrientationType:
+class OrientationType(IntEnum):
     """
     OrientationType from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-orientationtype
@@ -835,7 +835,7 @@ class OrientationType:
     Vertical = 2
 
 
-class ToggleState:
+class ToggleState(IntEnum):
     """
     ToggleState from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-togglestate
@@ -846,7 +846,7 @@ class ToggleState:
     Indeterminate = 2
 
 
-class TextPatternRangeEndpoint:
+class TextPatternRangeEndpoint(IntEnum):
     """
     TextPatternRangeEndpoint from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-textpatternrangeendpoint
@@ -908,7 +908,7 @@ class TextAttributeId:
     UnderlineStyleAttribute = 40030
 
 
-class TextUnit:
+class TextUnit(IntEnum):
     """
     TextUnit from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-textunit
@@ -923,7 +923,7 @@ class TextUnit:
     Document = 6
 
 
-class ZoomUnit:
+class ZoomUnit(IntEnum):
     """
     ZoomUnit from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-zoomunit
@@ -936,7 +936,7 @@ class ZoomUnit:
     SmallIncrement = 4
 
 
-class WindowInteractionState:
+class WindowInteractionState(IntEnum):
     """
     WindowInteractionState from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-windowinteractionstate
@@ -949,7 +949,7 @@ class WindowInteractionState:
     NotResponding = 4
 
 
-class WindowVisualState:
+class WindowVisualState(IntEnum):
     """
     WindowVisualState from IUIAutomation.
     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/ne-uiautomationcore-windowvisualstate
@@ -960,7 +960,7 @@ class WindowVisualState:
     Minimized = 2
 
 
-class ConsoleColor:
+class ConsoleColor(IntEnum):
     """ConsoleColor from Win32."""
 
     Default = -1
@@ -982,7 +982,7 @@ class ConsoleColor:
     White = 15
 
 
-class GAFlag:
+class GAFlag(IntEnum):
     """GAFlag from Win32."""
 
     Parent = 1
@@ -990,7 +990,7 @@ class GAFlag:
     RootOwner = 3
 
 
-class MouseEventFlag:
+class MouseEventFlag(IntFlag):
     """MouseEventFlag from Win32."""
 
     Move = 0x0001
@@ -1009,7 +1009,7 @@ class MouseEventFlag:
     Absolute = 0x8000
 
 
-class KeyboardEventFlag:
+class KeyboardEventFlag(IntEnum):
     """KeyboardEventFlag from Win32."""
 
     KeyDown = 0x0000
@@ -1019,7 +1019,7 @@ class KeyboardEventFlag:
     KeyScanCode = 0x0008
 
 
-class InputType:
+class InputType(IntEnum):
     """InputType from Win32"""
 
     Mouse = 0
@@ -1027,7 +1027,7 @@ class InputType:
     Hardware = 2
 
 
-class ModifierKey:
+class ModifierKey(IntFlag):
     """ModifierKey from Win32."""
 
     Alt = 0x0001
@@ -1037,7 +1037,7 @@ class ModifierKey:
     NoRepeat = 0x4000
 
 
-class SW:
+class SW(IntEnum):
     """ShowWindow params from Win32."""
 
     Hide = 0
@@ -1057,7 +1057,7 @@ class SW:
     Max = 11
 
 
-class SWP:
+class SWP(IntFlag):
     """SetWindowPos params from Win32."""
 
     HWND_Top = 0
@@ -1081,7 +1081,7 @@ class SWP:
     SWP_AsyncWindowPos = 0x4000
 
 
-class MB:
+class MB(IntFlag):
     """MessageBox flags from Win32."""
 
     Ok = 0x00000000
@@ -1137,7 +1137,7 @@ class MB:
     IdTimeout = 32000
 
 
-class GWL:
+class GWL(IntEnum):
     ExStyle = -20
     HInstance = -6
     HwndParent = -8
@@ -1147,13 +1147,13 @@ class GWL:
     WndProc = -4
 
 
-class ProcessDpiAwareness:
+class ProcessDpiAwareness(IntEnum):
     DpiUnaware = 0
     SystemDpiAware = 1
     PerMonitorDpiAware = 2
 
 
-class DpiAwarenessContext:
+class DpiAwarenessContext(IntEnum):
     Unaware = -1
     SystemAware = -2
     PerMonitorAware = -3
@@ -1161,7 +1161,7 @@ class DpiAwarenessContext:
     UnawareGdiScaled = -5
 
 
-class Keys:
+class Keys(IntFlag):
     """Key codes from Win32."""
 
     VK_LBUTTON = 0x01  # Left mouse button
@@ -1701,7 +1701,7 @@ class Rect:
         )
 
 
-class ClipboardFormat:
+class ClipboardFormat(IntEnum):
     CF_TEXT = 1
     CF_BITMAP = 2
     CF_METAFILEPICT = 3

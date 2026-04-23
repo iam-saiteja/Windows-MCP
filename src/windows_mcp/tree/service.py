@@ -116,8 +116,16 @@ class Tree:
                 (end_time - start_time) * 1000,
                 use_dom,
             )
-        logger.debug(f"[Tree] Tree State capture took {end_time - start_time:.2f} seconds")
-        return TreeState(status=status,root_node=root_node,dom_node=dom_node,interactive_nodes=interactive_nodes,scrollable_nodes=scrollable_nodes,dom_informative_nodes=dom_informative_nodes)
+        logger.info(f"[Tree] Tree State capture took {end_time - start_time:.2f} seconds")
+        return TreeState(
+            status=status,
+            root_node=root_node,
+            dom_node=dom_node,
+            interactive_nodes=interactive_nodes,
+            scrollable_nodes=scrollable_nodes,
+            dom_informative_nodes=dom_informative_nodes,
+            capture_sec=end_time - start_time
+        )
 
     def get_window_wise_nodes(self,windows_handles:list[int],active_window_flag:bool,use_dom:bool=False) -> tuple[list[TreeElementNode],list[ScrollElementNode],list[TextElementNode],list[int]]:
         """Process windows sequentially to avoid COM apartment threading deadlock.
@@ -380,22 +388,29 @@ class Tree:
                                  
                         elif control_type_name == 'GroupControl':
                              if is_browser:
-                                 try:
+                                try:
+                                    has_expand_collapse = node.GetCachedPropertyValue(PropertyId.ExpandCollapseExpandCollapseStateProperty)
+                                    if has_expand_collapse in ExpandCollapseState:
+                                        is_interactive = True
+                                except Exception:
+                                    pass
+
+                                try:
                                     role = node.GetCachedPropertyValue(PropertyId.LegacyIAccessibleRoleProperty)
                                     is_role_interactive = AccessibleRoleNames.get(role, "Default") in INTERACTIVE_ROLES
-                                 except Exception:
+                                except Exception:
                                     is_role_interactive = False
                                     
-                                 is_default_action = False
-                                 try:
-                                     default_action = node.GetCachedPropertyValue(PropertyId.LegacyIAccessibleDefaultActionProperty)
-                                     if default_action and default_action.title() in DEFAULT_ACTIONS:
-                                         is_default_action = True
-                                 except Exception:
+                                is_default_action = False
+                                try:
+                                    default_action = node.GetCachedPropertyValue(PropertyId.LegacyIAccessibleDefaultActionProperty)
+                                    if default_action and default_action.title() in DEFAULT_ACTIONS:
+                                        is_default_action = True
+                                except Exception:
                                     pass
                                  
-                                 if is_role_interactive and (is_default_action or is_keyboard_focusable):
-                                     is_interactive = True
+                                if is_role_interactive and (is_default_action or is_keyboard_focusable):
+                                    is_interactive = True
 
                         if is_interactive:
                             is_focused = node.CachedHasKeyboardFocus

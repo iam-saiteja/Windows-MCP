@@ -14,6 +14,7 @@ class TreeState:
     interactive_nodes: list["TreeElementNode"] = field(default_factory=list)
     scrollable_nodes: list["ScrollElementNode"] = field(default_factory=list)
     dom_informative_nodes: list["TextElementNode"] = field(default_factory=list)
+    capture_sec: float = 0.0
 
     def interactive_elements_to_string(self) -> str:
         if not self.interactive_nodes:

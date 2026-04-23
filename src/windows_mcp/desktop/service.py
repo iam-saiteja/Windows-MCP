@@ -254,6 +254,7 @@ class Desktop:
             screenshot_displays=display_indices,
             tree_state=tree_state,
             screenshot_backend=getattr(self, "_last_screenshot_backend", None) if use_vision else None,
+            capture_sec=time() - start_time,
         )
         if profile_enabled:
             state_build_ms = (perf_counter() - stage_started_at) * 1000
@@ -1266,6 +1267,7 @@ class Desktop:
             interactive_nodes=filtered_interactive_nodes,
             scrollable_nodes=filtered_scrollable_nodes,
             dom_informative_nodes=tree_state.dom_informative_nodes if filtered_dom_node else [],
+            capture_sec=tree_state.capture_sec,
         )
 
     def send_notification(self, title: str, message: str, app_id: str) -> str:
