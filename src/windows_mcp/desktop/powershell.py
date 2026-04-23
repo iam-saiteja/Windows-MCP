@@ -161,10 +161,6 @@ def _prepare_env() -> dict[str, str]:
     return env
 
 
-def _is_elevated() -> bool:
-    return is_elevated()
-
-
 class PowerShellExecutor:
     """Static utility class for executing PowerShell commands."""
 
@@ -215,7 +211,7 @@ class PowerShellExecutor:
                 stderr = stderr.decode("utf-8", errors="replace")
             output = stdout or stderr
             # If the command failed with "Access is denied" and we aren't elevated, add a helpful hint
-            if result.returncode != 0 and "Access is denied" in output and not _is_elevated():
+            if result.returncode != 0 and "Access is denied" in output and not is_elevated():
                 output += (
                     "\n\nHINT: This command may require an elevated (Administrator) terminal. "
                     "The Windows-MCP server is currently running at a lower integrity level."
