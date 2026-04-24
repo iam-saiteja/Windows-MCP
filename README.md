@@ -521,6 +521,12 @@ In a local Windows benchmark with a synthetic tree state and 35,000 label resolu
 - Bulk: `0.002825s`
 - Improvement: `52.09%`
 
+In a local desktop runtime check (live Windows state capture path), the measured averages were:
+
+- FindElement-like (`use_vision=False`, `use_annotation=False`): `0.5507s`
+- Snapshot-like (`use_vision=True`, `use_annotation=True`): `0.6717s`
+- Relative gain for lighter lookup path: `~18.01%`
+
 You can reproduce the comparison with:
 
 ```shell
