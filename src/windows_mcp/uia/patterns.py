@@ -759,13 +759,13 @@ class ObjectModelPattern:
         """Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nn-uiautomationclient-iuiautomationobjectmodelpattern"""
         self.pattern = pattern
 
-    # def GetUnderlyingObjectModel(self) -> ctypes.POINTER(comtypes.automation.IUnknown):
-    #     """
-    #     Call IUIAutomationObjectModelPattern::GetUnderlyingObjectModel, todo.
-    #     Return `ctypes.POINTER(comtypes.IUnknown)`, an interface used to access the underlying object model of the provider.
-    #     Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationobjectmodelpattern-getunderlyingobjectmodel
-    #     """
-    #     return self.pattern.GetUnderlyingObjectModel()
+    def GetUnderlyingObjectModel(self) -> ctypes.POINTER(comtypes.IUnknown):
+        """
+        Call IUIAutomationObjectModelPattern::GetUnderlyingObjectModel.
+        Return `ctypes.POINTER(comtypes.IUnknown)`, an interface used to access the underlying object model of the provider.
+        Refer https://docs.microsoft.com/en-us/windows/win32/api/uiautomationclient/nf-uiautomationclient-iuiautomationobjectmodelpattern-getunderlyingobjectmodel
+        """
+        return self.pattern.GetUnderlyingObjectModel()
 
 
 class RangeValuePattern:
