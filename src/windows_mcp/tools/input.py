@@ -18,6 +18,16 @@ def _resolve_label(desktop, label):
         raise ValueError(f"Failed to find element with label {label}: {e}")
 
 
+def _get_state_nodes(state):
+    """Return interactive + scrollable nodes from either new or legacy state shapes."""
+    tree = getattr(state, "tree_state", None) or getattr(state, "tree", None)
+    if tree is None:
+        return []
+    interactive = getattr(tree, "interactive_nodes", [])
+    scrollable = getattr(tree, "scrollable_nodes", [])
+    return [*interactive, *scrollable]
+
+
 def register(mcp, *, get_desktop, get_analytics):
     @mcp.tool(
         name="Click",
@@ -215,10 +225,13 @@ def register(mcp, *, get_desktop, get_analytics):
         start_time = time.time()
         while time.time() - start_time < timeout:
             state = desktop.get_state(use_vision=False, use_annotation=False, use_dom=False, use_ui_tree=True)
-            if state and state.tree:
-                for node in state.tree.interactive_nodes + state.tree.scrollable_nodes:
+            if state:
+                for node in _get_state_nodes(state):
                     if node.name == name:
-                        return f"Found '{name}' at {node.center.to_string()} after {int(time.time() - start_time)} seconds."
+                        return (
+                            f"Found '{name}' at {node.center.to_string()} "
+                            f"after {int(time.time() - start_time)} seconds."
+                        )
             time.sleep(1)
         return f"Error: Timeout after {timeout} seconds waiting for element '{name}'."
 
@@ -239,15 +252,16 @@ def register(mcp, *, get_desktop, get_analytics):
         desktop = get_desktop()
         state = desktop.get_state(use_vision=False, use_annotation=False, use_dom=False, use_ui_tree=True)
         results = []
-        if state and state.tree:
-            all_nodes = state.tree.interactive_nodes + state.tree.scrollable_nodes
-            for node in all_nodes:
+        if state:
+            for node in _get_state_nodes(state):
                 if query.lower() in node.name.lower() or re.search(query, node.name, re.IGNORECASE):
-                    results.append({
-                        "name": node.name,
-                        "control_type": node.control_type,
-                        "window_name": node.window_name,
-                        "coords": node.center.to_string(),
-                        "metadata": node.metadata
-                    })
+                    results.append(
+                        {
+                            "name": node.name,
+                            "control_type": node.control_type,
+                            "window_name": node.window_name,
+                            "coords": node.center.to_string(),
+                            "metadata": node.metadata,
+                        }
+                    )
         return results
