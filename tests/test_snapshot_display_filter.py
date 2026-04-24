@@ -7,7 +7,13 @@ from PIL import Image
 from windows_mcp.desktop.screenshot import _crop_screenshot  # noqa
 from windows_mcp.desktop.service import Desktop
 from windows_mcp.desktop.views import DesktopState, Size, Status, Window
-from windows_mcp.tree.views import BoundingBox, Center, ScrollElementNode, TreeElementNode, TreeState
+from windows_mcp.tree.views import (
+    BoundingBox,
+    Center,
+    ScrollElementNode,
+    TreeElementNode,
+    TreeState,
+)
 from windows_mcp.uia import Rect
 import windows_mcp.__main__ as main_module
 
@@ -143,9 +149,13 @@ class TestDisplayFiltering:
         capture_rect = Rect(1920, 0, 3840, 1080)
         with patch("windows_mcp.desktop.screenshot.dxcam", None):
             with patch("windows_mcp.desktop.screenshot.ImageGrab.grab") as mock_grab:
-                with patch("windows_mcp.desktop.screenshot.get_screenshot_backend") as mock_screenshot_backend:
+                with patch(
+                    "windows_mcp.desktop.screenshot.get_screenshot_backend"
+                ) as mock_screenshot_backend:
                     mock_grab.return_value = Image.new("RGB", (1920, 1080), "white")
-                    mock_screenshot_backend.return_value = "pillow"  # Ensure we test the Pillow path
+                    mock_screenshot_backend.return_value = (
+                        "pillow"  # Ensure we test the Pillow path
+                    )
                     screenshot = desktop.get_screenshot(capture_rect=capture_rect)
 
         assert screenshot.size == (1920, 1080)
@@ -179,7 +189,9 @@ class TestDisplayFiltering:
         fake_camera.grab.assert_called_once_with(region=None, copy=True, new_frame_only=False)
         mock_fromarray.assert_called_once()
 
-    def test_get_screenshot_falls_back_to_pillow_when_dxcam_region_is_unsupported(self, desktop, monkeypatch):
+    def test_get_screenshot_falls_back_to_pillow_when_dxcam_region_is_unsupported(
+        self, desktop, monkeypatch
+    ):
         capture_rect = Rect(0, 0, 3840, 1080)
         fake_dxcam = MagicMock()
 
@@ -222,7 +234,9 @@ class TestDisplayFiltering:
 
     def test_grid_lines_use_selected_display_region(self, desktop):
         screenshot = Image.new("RGB", (1920, 1080), "white")
-        with patch.object(desktop, "get_screenshot", return_value=screenshot) as mock_get_screenshot:
+        with patch.object(
+            desktop, "get_screenshot", return_value=screenshot
+        ) as mock_get_screenshot:
             with patch("windows_mcp.desktop.service.uia.GetVirtualScreenRect") as mock_virtual_rect:
                 mock_virtual_rect.return_value = (0, 0, 3840, 1080)
                 annotated = desktop.get_annotated_screenshot(
@@ -268,8 +282,12 @@ class TestDisplayFiltering:
         desktop.get_cursor_location = MagicMock(return_value=(250, 180))
         desktop.get_screenshot = MagicMock(return_value=Image.new("RGB", (800, 600), "white"))
 
-        with patch("windows_mcp.desktop.service.get_current_desktop", return_value={"name": "Desktop 1"}):
-            with patch("windows_mcp.desktop.service.get_all_desktops", return_value=[{"name": "Desktop 1"}]):
+        with patch(
+            "windows_mcp.desktop.service.get_current_desktop", return_value={"name": "Desktop 1"}
+        ):
+            with patch(
+                "windows_mcp.desktop.service.get_all_desktops", return_value=[{"name": "Desktop 1"}]
+            ):
                 state = desktop.get_state(
                     use_vision=True,
                     use_annotation=False,
@@ -307,10 +325,17 @@ class TestDisplayFiltering:
         logged: list[str] = []
 
         monkeypatch.setenv("WINDOWS_MCP_PROFILE_SNAPSHOT", "1")
-        monkeypatch.setattr("windows_mcp.desktop.service.logger.info", lambda message, *args: logged.append(message % args if args else message))
+        monkeypatch.setattr(
+            "windows_mcp.desktop.service.logger.info",
+            lambda message, *args: logged.append(message % args if args else message),
+        )
 
-        with patch("windows_mcp.desktop.service.get_current_desktop", return_value={"name": "Desktop 1"}):
-            with patch("windows_mcp.desktop.service.get_all_desktops", return_value=[{"name": "Desktop 1"}]):
+        with patch(
+            "windows_mcp.desktop.service.get_current_desktop", return_value={"name": "Desktop 1"}
+        ):
+            with patch(
+                "windows_mcp.desktop.service.get_all_desktops", return_value=[{"name": "Desktop 1"}]
+            ):
                 desktop.get_state(
                     use_vision=False,
                     use_annotation=False,

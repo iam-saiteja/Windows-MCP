@@ -159,18 +159,18 @@ def build_snapshot_response(
             " for click, move and other mouse actions)\n"
         )
     if desktop_state.screenshot_region:
-        metadata_text += (
-            f"Screenshot Region: {desktop_state.screenshot_region.xyxy_to_string()}\n"
-        )
+        metadata_text += f"Screenshot Region: {desktop_state.screenshot_region.xyxy_to_string()}\n"
     if desktop_state.screenshot_displays:
-        metadata_text += f"Displays: {','.join(str(index) for index in desktop_state.screenshot_displays)}\n"
+        metadata_text += (
+            f"Displays: {','.join(str(index) for index in desktop_state.screenshot_displays)}\n"
+        )
         metadata_text += "Coordinate Space: Virtual desktop coordinates\n"
     if desktop_state.screenshot_backend:
         metadata_text += f"Screenshot Backend: {desktop_state.screenshot_backend}\n"
     if ui_detail_note:
         metadata_text += f"{ui_detail_note}\n"
 
-    response_text = dedent(f'''
+    response_text = dedent(f"""
     {metadata_text}
     Active Desktop:
     {active_desktop}
@@ -183,17 +183,17 @@ def build_snapshot_response(
 
     Opened Windows:
     {windows}
-    ''')
+    """)
     if include_ui_details:
-        response_text += dedent(f'''
+        response_text += dedent(f"""
 
     List of Interactive Elements:
     {interactive_elements or "No interactive elements found."}
 
     List of Scrollable Elements:
-    {scrollable_elements or 'No scrollable elements found.'}''')
+    {scrollable_elements or "No scrollable elements found."}""")
 
     response = [response_text]
     if screenshot_bytes:
-        response.append(Image(data=screenshot_bytes, format='png'))
+        response.append(Image(data=screenshot_bytes, format="png"))
     return response

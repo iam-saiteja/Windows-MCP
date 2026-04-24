@@ -27,7 +27,9 @@ def register(mcp, *, get_desktop, get_analytics):
     ) -> str:
         desktop = get_desktop()
         use_dom = use_dom is True or (isinstance(use_dom, str) and use_dom.lower() == "true")
-        use_sampling = use_sampling is True or (isinstance(use_sampling, str) and use_sampling.lower() == "true")
+        use_sampling = use_sampling is True or (
+            isinstance(use_sampling, str) and use_sampling.lower() == "true"
+        )
 
         if not use_dom:
             content = desktop.scrape(url)
@@ -37,9 +39,11 @@ def register(mcp, *, get_desktop, get_analytics):
             if not tree_state.dom_node:
                 return f"No DOM information found. Please open {url} in browser first."
             dom_node = tree_state.dom_node
-            vertical_scroll_percent = getattr(dom_node, 'vertical_scroll_percent', 0)
+            vertical_scroll_percent = getattr(dom_node, "vertical_scroll_percent", 0)
             content = "\n".join([node.text for node in tree_state.dom_informative_nodes])
-            header_status = "Reached top" if vertical_scroll_percent <= 0 else "Scroll up to see more"
+            header_status = (
+                "Reached top" if vertical_scroll_percent <= 0 else "Scroll up to see more"
+            )
             footer_status = (
                 "Reached bottom" if vertical_scroll_percent >= 100 else "Scroll down to see more"
             )

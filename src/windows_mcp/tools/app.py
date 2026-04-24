@@ -21,7 +21,7 @@ def register(mcp, *, get_desktop, get_analytics):
     )
     @with_analytics(get_analytics(), "App-Tool")
     def app_tool(
-        mode: Literal['launch', 'resize', 'switch'] = 'launch',
+        mode: Literal["launch", "resize", "switch"] = "launch",
         name: str | None = None,
         window_loc: list[int] | None = None,
         window_size: list[int] | None = None,

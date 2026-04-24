@@ -22,13 +22,11 @@ import threading
 import ctypes
 import ctypes.wintypes
 import comtypes
-from _ctypes import COMError
 from typing import Any, Callable, Dict, Generator, List, Tuple
 from .enums import *
 from .core import *
 from .core import _AutomationClient
 from .patterns import *
-from .exceptions import from_com_error, UIAException
 
 
 METRO_WINDOW_CLASS_NAME = "Windows.UI.Core.CoreWindow"  # for Windows 8 and 8.1
@@ -5686,7 +5684,7 @@ def RunByHotKey(
             WaitHotKeyReleased(hotkey)
         try:
             function(stopEvent)
-        except Exception as ex:
+        except Exception:
             print(traceback.format_exc())
         finally:
             releaseAllKeys()  # need to release keys if some keys were pressed

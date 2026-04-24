@@ -9,6 +9,7 @@ UIA = uia_client.UIAutomationCore
 
 logger = logging.getLogger(__name__)
 
+
 class FocusChangedEventHandler(comtypes.COMObject):
     _com_interfaces_ = [UIA.IUIAutomationFocusChangedEventHandler]
 

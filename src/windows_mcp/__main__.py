@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
-from windows_mcp.config import is_debug, enable_debug
+from windows_mcp.config import enable_debug
 from fastmcp import FastMCP
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from dataclasses import dataclass, field
 from textwrap import dedent
 from enum import Enum
 from typing import Any
@@ -123,8 +122,6 @@ def __getattr__(name: str):
             raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
         return getattr(tool, "fn", tool)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
 
 
 class Transport(Enum):

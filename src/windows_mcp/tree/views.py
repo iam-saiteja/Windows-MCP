@@ -6,6 +6,7 @@ from typing import Any
 
 import json
 
+
 @dataclass
 class TreeState:
     status: bool = True
@@ -134,7 +135,7 @@ class ScrollElementNode:
             self.control_type,
             self.name,
             self.center.to_string(),
-            json.dumps(self.metadata)
+            json.dumps(self.metadata),
         ]
 
 

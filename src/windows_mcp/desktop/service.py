@@ -253,7 +253,9 @@ class Desktop:
             screenshot_region=screenshot_region,
             screenshot_displays=display_indices,
             tree_state=tree_state,
-            screenshot_backend=getattr(self, "_last_screenshot_backend", None) if use_vision else None,
+            screenshot_backend=getattr(self, "_last_screenshot_backend", None)
+            if use_vision
+            else None,
             capture_sec=time() - start_time,
         )
         if profile_enabled:
@@ -341,7 +343,9 @@ class Desktop:
                     apps[name] = lnk_path
         return apps
 
-    def execute_command(self, command: str, timeout: int = 10, shell: str | None = None) -> tuple[str, int]:
+    def execute_command(
+        self, command: str, timeout: int = 10, shell: str | None = None
+    ) -> tuple[str, int]:
         return PowerShellExecutor.execute_command(command, timeout, shell)
 
     def is_window_browser(self, node: uia.Control):
@@ -358,7 +362,9 @@ class Desktop:
         reader = csv.DictReader(io.StringIO(response))
         return "".join([row.get("DisplayName") for row in reader])
 
-    def _find_window_by_name(self, name: str, refresh_state: bool = False) -> tuple["Window | None", str]:
+    def _find_window_by_name(
+        self, name: str, refresh_state: bool = False
+    ) -> tuple["Window | None", str]:
         """Find a window by fuzzy name match. Returns (window, error_msg).
         If the returned window is None, error_msg describes the failure reason.
 
@@ -612,7 +618,7 @@ class Desktop:
                 raise IndexError(f"Label {label} out of range")
         return element_node.center.x, element_node.center.y
 
-    def click(self, loc: tuple[int, int]|list[int], button: str = "left", clicks: int = 2):
+    def click(self, loc: tuple[int, int] | list[int], button: str = "left", clicks: int = 2):
         if isinstance(loc, list):
             x, y = loc[0], loc[1]
         else:
@@ -694,7 +700,7 @@ class Desktop:
                 return 'Invalid type. Use "horizontal" or "vertical".'
         return None
 
-    def drag(self, loc: tuple[int, int]|list[int]):
+    def drag(self, loc: tuple[int, int] | list[int]):
         if isinstance(loc, list):
             x, y = loc[0], loc[1]
         else:
@@ -936,10 +942,10 @@ class Desktop:
         xpath = "/".join(path_parts)
         return xpath
 
-
-
     def get_windows_version(self) -> str:
-        response, status = PowerShellExecutor.execute_command("(Get-CimInstance Win32_OperatingSystem).Caption")
+        response, status = PowerShellExecutor.execute_command(
+            "(Get-CimInstance Win32_OperatingSystem).Caption"
+        )
         if status == 0:
             return response.strip()
         return "Windows"
@@ -977,14 +983,18 @@ class Desktop:
             return None
 
         if isinstance(display, bool):
-            raise ValueError("display must be a JSON array of non-negative integers, for example [0] or [0,1]")
+            raise ValueError(
+                "display must be a JSON array of non-negative integers, for example [0] or [0,1]"
+            )
 
         if isinstance(display, int):
             values = [display]
         elif isinstance(display, (list, tuple)):
             values = list(display)
         else:
-            raise ValueError("display must be a JSON array of non-negative integers, for example [0] or [0,1]")
+            raise ValueError(
+                "display must be a JSON array of non-negative integers, for example [0] or [0,1]"
+            )
 
         unique_values: list[int] = []
         for value in values:
@@ -997,7 +1007,9 @@ class Desktop:
     def get_display_union_rect(self, display_indices: list[int]) -> uia.Rect:
         monitor_rects = uia.GetMonitorsRect()
         if not monitor_rects:
-            logger.warning("Monitor enumeration returned no monitors while display filter was requested")
+            logger.warning(
+                "Monitor enumeration returned no monitors while display filter was requested"
+            )
             raise ValueError("No displays detected")
 
         invalid_indices = [index for index in display_indices if index >= len(monitor_rects)]
@@ -1131,7 +1143,9 @@ class Desktop:
             # Draw "Cursor" label
             c_label = "CURSOR"
             c_label_width = draw.textlength(c_label, font=font)
-            draw.rectangle([acx + r, acy - r, acx + r + c_label_width + 4, acy - r + 16], fill="red")
+            draw.rectangle(
+                [acx + r, acy - r, acx + r + c_label_width + 4, acy - r + 16], fill="red"
+            )
             draw.text((acx + r + 2, acy - r), c_label, fill="white", font=font)
 
         if capture_rect:
@@ -1180,9 +1194,7 @@ class Desktop:
             height=bottom - top,
         )
 
-    def _filter_window_to_region(
-        self, window: Window | None, region: BoundingBox
-    ) -> Window | None:
+    def _filter_window_to_region(self, window: Window | None, region: BoundingBox) -> Window | None:
         if window is None:
             return None
         clipped_box = self._clip_bounding_box_to_region(window.bounding_box, region)
@@ -1198,9 +1210,7 @@ class Desktop:
             process_id=window.process_id,
         )
 
-    def _filter_windows_to_region(
-        self, windows: list[Window], region: BoundingBox
-    ) -> list[Window]:
+    def _filter_windows_to_region(self, windows: list[Window], region: BoundingBox) -> list[Window]:
         filtered_windows: list[Window] = []
         for window in windows:
             filtered_window = self._filter_window_to_region(window, region)
@@ -1318,7 +1328,7 @@ class Desktop:
         if status == 0:
             return f'Notification sent: "{title}" - {message}'
         else:
-            return f'Notification may have been sent. PowerShell output: {response[:200]}'
+            return f"Notification may have been sent. PowerShell output: {response[:200]}"
 
     def list_processes(
         self,
@@ -1400,20 +1410,16 @@ class Desktop:
             return f'No process matching "{name}" found or access denied.'
         return f"{'Force killed' if force else 'Terminated'}: {', '.join(killed)}"
 
-
-
-
-
     def registry_get(self, path: str, name: str) -> str:
         q_path = ps_quote(path)
         q_name = ps_quote(name)
         command = f"Get-ItemProperty -Path {q_path} -Name {q_name} | Select-Object -ExpandProperty {q_name}"
         response, status = PowerShellExecutor.execute_command(command)
         if status != 0:
-            return f'Error reading registry: {response.strip()}'
+            return f"Error reading registry: {response.strip()}"
         return f'Registry value [{path}] "{name}" = {response.strip()}'
 
-    def registry_set(self, path: str, name: str, value: str, reg_type: str = 'String') -> str:
+    def registry_set(self, path: str, name: str, value: str, reg_type: str = "String") -> str:
         q_path = ps_quote(path)
         q_name = ps_quote(name)
         q_value = ps_quote(value)
@@ -1426,7 +1432,7 @@ class Desktop:
         )
         response, status = PowerShellExecutor.execute_command(command)
         if status != 0:
-            return f'Error writing registry: {response.strip()}'
+            return f"Error writing registry: {response.strip()}"
         return f'Registry value [{path}] "{name}" set to "{value}" (type: {reg_type}).'
 
     def registry_delete(self, path: str, name: str | None = None) -> str:
@@ -1436,14 +1442,14 @@ class Desktop:
             command = f"Remove-ItemProperty -Path {q_path} -Name {q_name} -Force"
             response, status = PowerShellExecutor.execute_command(command)
             if status != 0:
-                return f'Error deleting registry value: {response.strip()}'
+                return f"Error deleting registry value: {response.strip()}"
             return f'Registry value [{path}] "{name}" deleted.'
         else:
             command = f"Remove-Item -Path {q_path} -Recurse -Force"
             response, status = PowerShellExecutor.execute_command(command)
             if status != 0:
-                return f'Error deleting registry key: {response.strip()}'
-            return f'Registry key [{path}] deleted.'
+                return f"Error deleting registry key: {response.strip()}"
+            return f"Registry key [{path}] deleted."
 
     def registry_list(self, path: str) -> str:
         q_path = ps_quote(path)
@@ -1451,15 +1457,15 @@ class Desktop:
             f"$values = (Get-ItemProperty -Path {q_path} -ErrorAction Stop | "
             f"Select-Object * -ExcludeProperty PS* | Format-List | Out-String).Trim(); "
             f"$subkeys = (Get-ChildItem -Path {q_path} -ErrorAction SilentlyContinue | "
-            f"Select-Object -ExpandProperty PSChildName) -join \"`n\"; "
-            f"if ($values) {{ Write-Output \"Values:`n$values\" }}; "
-            f"if ($subkeys) {{ Write-Output \"`nSub-Keys:`n$subkeys\" }}; "
+            f'Select-Object -ExpandProperty PSChildName) -join "`n"; '
+            f'if ($values) {{ Write-Output "Values:`n$values" }}; '
+            f'if ($subkeys) {{ Write-Output "`nSub-Keys:`n$subkeys" }}; '
             f"if (-not $values -and -not $subkeys) {{ Write-Output 'No values or sub-keys found.' }}"
         )
         response, status = PowerShellExecutor.execute_command(command)
         if status != 0:
-            return f'Error listing registry: {response.strip()}'
-        return f'Registry key [{path}]:\n{response.strip()}'
+            return f"Error listing registry: {response.strip()}"
+        return f"Registry key [{path}]:\n{response.strip()}"
 
     @contextmanager
     def auto_minimize(self):

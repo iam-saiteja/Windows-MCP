@@ -2060,7 +2060,9 @@ class UIAError(IntEnum):
     UIA_E_ELEMENTNOTENABLED = -2147220992  # 0x80040200 — method called on disabled element
     UIA_E_ELEMENTNOTAVAILABLE = -2147220991  # 0x80040201 — element destroyed or virtualized
     UIA_E_NOCLICKABLEPOINT = -2147220990  # 0x80040202 — element has no clickable point
-    UIA_E_PROXYASSEMBLYNOTLOADED = -2147220989  # 0x80040203 — client-side proxy provider failed to load
+    UIA_E_PROXYASSEMBLYNOTLOADED = (
+        -2147220989
+    )  # 0x80040203 — client-side proxy provider failed to load
     UIA_E_NOTSUPPORTED = -2147220988  # 0x80040204 — property/pattern not supported by provider
     UIA_E_INVALIDOPERATION = -2146233079  # 0x80131509 — operation not valid in current state
     UIA_E_TIMEOUT = -2146233083  # 0x80131505 — UIA operation timed out
@@ -2071,7 +2073,9 @@ class UIAError(IntEnum):
 
     RPC_E_CALL_REJECTED = -2147418111  # 0x80010001 — callee rejected the call (app busy, may retry)
     RPC_E_CALL_CANCELED = -2147418110  # 0x80010002 — call canceled by message filter
-    RPC_E_CONNECTION_TERMINATED = -2147418106  # 0x80010006 — connection terminated or in bogus state
+    RPC_E_CONNECTION_TERMINATED = (
+        -2147418106
+    )  # 0x80010006 — connection terminated or in bogus state
     RPC_E_SERVER_DIED = -2147418105  # 0x80010007 — server gone, call may have executed
     RPC_E_SERVER_DIED_DNE = -2147418094  # 0x80010012 — server gone, call did NOT execute
     RPC_E_SYS_CALL_FAILED = -2147417854  # 0x80010100 — underlying system call failed

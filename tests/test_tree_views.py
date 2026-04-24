@@ -68,7 +68,10 @@ class TestTreeState:
         result = ts.interactive_elements_to_string()
         lines = result.split("\n")
         assert lines[0] == "# id|window|control_type|name|coords|metadata"
-        assert lines[1] == '0|Notepad|Button|OK|(200,100)|{"value": "", "shortcut": "Alt+O", "has_focused": true}'
+        assert (
+            lines[1]
+            == '0|Notepad|Button|OK|(200,100)|{"value": "", "shortcut": "Alt+O", "has_focused": true}'
+        )
 
     def test_interactive_elements_indices(self, sample_tree_element_node):
         node2 = TreeElementNode(
@@ -97,9 +100,7 @@ class TestTreeState:
         )
         result = ts.scrollable_elements_to_string()
         lines = result.split("\n")
-        assert (
-            lines[0] == "# id|window|control_type|name|coords|metadata"
-        )
+        assert lines[0] == "# id|window|control_type|name|coords|metadata"
         # base_index = len(interactive_nodes) = 1
         assert lines[1].startswith("1|")
         assert '"vertical_scroll_percent": 42.5' in lines[1]
@@ -148,5 +149,6 @@ class TestScrollElementNode:
         assert row[3] == "Document"
         assert row[4] == "(200,100)"
         import json
+
         metadata = json.loads(row[5])
         assert metadata["vertical_scroll_percent"] == 42.5

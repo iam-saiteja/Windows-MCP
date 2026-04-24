@@ -122,7 +122,8 @@ def register(mcp, *, get_desktop, get_analytics):
         if response:
             return response
         return (
-            f"Scrolled {type} {direction} by {wheel_times} wheel times" + f" at ({loc[0]},{loc[1]})."
+            f"Scrolled {type} {direction} by {wheel_times} wheel times"
+            + f" at ({loc[0]},{loc[1]})."
             if loc
             else ""
         )

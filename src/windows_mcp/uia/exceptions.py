@@ -1,7 +1,7 @@
 """UIA exception hierarchy for typed error handling."""
 
 from _ctypes import COMError  # noqa: F401 — re-exported for callers
-from .enums import UIAError, is_dead_element_error, is_retryable_error
+from .enums import UIAError
 
 
 class UIAException(Exception):
@@ -10,7 +10,9 @@ class UIAException(Exception):
     def __init__(self, code: int, original: Exception | None = None):
         self.code = code
         self.original = original
-        name = UIAError(code).name if code in UIAError._value2member_map_ else hex(code & 0xFFFFFFFF)
+        name = (
+            UIAError(code).name if code in UIAError._value2member_map_ else hex(code & 0xFFFFFFFF)
+        )
         super().__init__(f"{name} ({code})")
 
     @property

@@ -15,12 +15,12 @@ class TestFormatSize:
         assert format_size(10240) == "10.0 KB"
 
     def test_megabytes(self):
-        assert format_size(1024 ** 2) == "1.0 MB"
-        assert format_size(5 * 1024 ** 2) == "5.0 MB"
+        assert format_size(1024**2) == "1.0 MB"
+        assert format_size(5 * 1024**2) == "5.0 MB"
 
     def test_gigabytes(self):
-        assert format_size(1024 ** 3) == "1.0 GB"
-        assert format_size(2 * 1024 ** 3) == "2.0 GB"
+        assert format_size(1024**3) == "1.0 GB"
+        assert format_size(2 * 1024**3) == "2.0 GB"
 
 
 class TestConstants:

@@ -13,6 +13,11 @@ from windows_mcp.desktop.utils import run_with_graceful_timeout, is_elevated
 
 logger = logging.getLogger(__name__)
 
+_SYSTEM_ROOT = os.environ.get("SystemRoot", r"C:\Windows")
+_POWERSHELL_PATH = os.path.join(
+    _SYSTEM_ROOT, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"
+)
+
 
 def _read_reg_env(hkey: int, subkey: str) -> tuple[dict[str, str], str, str]:
     """Read all environment variables from a registry key.
@@ -185,7 +190,10 @@ class PowerShellExecutor:
             # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_ansi_terminals#disabling-ansi-output
             env["NO_COLOR"] = "1"
 
-            shell = shell or ("pwsh" if shutil.which("pwsh") else "powershell")
+            if not shell:
+                shell = "pwsh" if shutil.which("pwsh") else _POWERSHELL_PATH
+            elif shell.lower() == "powershell" or shell.lower() == "powershell.exe":
+                shell = _POWERSHELL_PATH
 
             args = [shell, "-NoProfile"]
             # Only older Windows PowerShell (5.1) uses -OutputFormat Text successfully here
@@ -201,6 +209,7 @@ class PowerShellExecutor:
                 timeout=timeout,
                 cwd=os.path.expanduser(path="~"),
                 env=env,
+                shell=False,
             )
             # Handle both bytes and str output (subprocess behavior varies by environment)
             stdout = result.stdout

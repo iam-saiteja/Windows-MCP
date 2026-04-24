@@ -21,7 +21,9 @@ def register(mcp, *, get_desktop, get_analytics):
     )
     @with_analytics(get_analytics(), "Clipboard-Tool")
     def clipboard_tool(
-        mode: Literal["get", "set"], text: str | None = None, ctx: Context = None,
+        mode: Literal["get", "set"],
+        text: str | None = None,
+        ctx: Context = None,
     ) -> str:
         try:
             import win32clipboard

@@ -55,7 +55,6 @@ class PostHogAnalytics:
         self._user_id = None
         self.mcp_interaction_id = f"mcp_{int(time.time() * 1000)}_{os.getpid()}"
 
-
         if self.client:
             logger.debug(
                 f"Initialized with user ID: {self.user_id} and session ID: {self.mcp_interaction_id}"

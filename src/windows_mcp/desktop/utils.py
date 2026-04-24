@@ -12,6 +12,9 @@ import psutil
 import pywintypes
 from win32com.shell import shell
 
+_SYSTEM_ROOT = os.environ.get("SystemRoot", r"C:\Windows")
+_TASKKILL_PATH = os.path.join(_SYSTEM_ROOT, "System32", "taskkill.exe")
+
 __all__ = [
     "ps_quote",
     "ps_quote_for_xml",
@@ -26,11 +29,13 @@ __all__ = [
 def is_elevated() -> bool:
     """Check if the current process has administrative privileges."""
     import ctypes
+
     try:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
     except (AttributeError, Exception):
         # Not on Windows or Win32 API unavailable
         return False
+
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +47,7 @@ def ps_quote(value: str) -> str:
 
 def ps_quote_for_xml(value: str) -> str:
     """XML-escape then ps_quote. Use for values in XML passed to PowerShell."""
-    escaped = xml_escape(value, {'"': '&quot;', "'": '&apos;'})
+    escaped = xml_escape(value, {'"': "&quot;", "'": "&apos;"})
     return ps_quote(escaped)
 
 
@@ -82,17 +87,17 @@ def resolve_known_folder_guid_path(path_text: str) -> str:
 
 
 _PRIVATE_USE_RE = re.compile(
-    r'['
-    r'\uE000-\uF8FF'          # BMP Private Use Area
-    r'\U000F0000-\U000FFFFD'  # Supplementary Private Use Area-A
-    r'\U00100000-\U0010FFFD'  # Supplementary Private Use Area-B
-    r']+'
+    r"["
+    r"\uE000-\uF8FF"  # BMP Private Use Area
+    r"\U000F0000-\U000FFFFD"  # Supplementary Private Use Area-A
+    r"\U00100000-\U0010FFFD"  # Supplementary Private Use Area-B
+    r"]+"
 )
 
 
 def remove_private_use_chars(text: str) -> str:
     """Remove Unicode Private Use Area characters that may cause rendering issues."""
-    return _PRIVATE_USE_RE.sub('', text)
+    return _PRIVATE_USE_RE.sub("", text)
 
 
 def check_pid_exists(pid: int) -> bool:
@@ -105,13 +110,13 @@ def check_pid_exists(pid: int) -> bool:
 
 
 def run_with_graceful_timeout(
-        *popenargs,
-        input=None,
-        capture_output=False,
-        timeout=None,
-        check=False,
-        grace_period: float = 2.0,
-        **kwargs,
+    *popenargs,
+    input=None,
+    capture_output=False,
+    timeout=None,
+    check=False,
+    grace_period: float = 2.0,
+    **kwargs,
 ):
     """A Windows-oriented variant migrated from ``subprocess.run``.
 
@@ -169,6 +174,7 @@ def run_with_graceful_timeout(
     creationflags = kwargs.get("creationflags", 0)
     creationflags |= subprocess.CREATE_NEW_PROCESS_GROUP
     kwargs["creationflags"] = creationflags
+    kwargs.setdefault("shell", False)
 
     with subprocess.Popen(*popenargs, **kwargs) as process:
         stdout = stderr = None
@@ -177,11 +183,11 @@ def run_with_graceful_timeout(
 
         except subprocess.TimeoutExpired as exc1:
             # Try graceful shutdown first
-            logger.debug('Process did not exit within timeout, attempting graceful shutdown.')
+            logger.debug("Process did not exit within timeout, attempting graceful shutdown.")
             try:
                 process.send_signal(signal.CTRL_BREAK_EVENT)
             except Exception:
-                logger.debug('Failed to send CTRL_BREAK_EVENT, attempting to terminate process.')
+                logger.debug("Failed to send CTRL_BREAK_EVENT, attempting to terminate process.")
 
             try:
                 exc1.stdout, exc1.stderr = process.communicate(timeout=grace_period)
@@ -198,10 +204,11 @@ def run_with_graceful_timeout(
                     f"Process {process.pid} (exist: {check_pid_exists(process.pid)}) did not exit gracefully after {grace_period} seconds, killing it and all child processes..."
                 )
                 subprocess.run(
-                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                    [_TASKKILL_PATH, "/PID", str(process.pid), "/T", "/F"],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     check=False,
+                    shell=False,
                 )
 
                 try:
@@ -217,19 +224,18 @@ def run_with_graceful_timeout(
 
         except BaseException:
             # Keep cleanup strategy consistent with timeout path
-            logger.debug('Other exception occurred, attempting to kill process...')
+            logger.debug("Other exception occurred, attempting to kill process...")
             subprocess.run(
-                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                [_TASKKILL_PATH, "/PID", str(process.pid), "/T", "/F"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=False,
+                shell=False,
             )
             raise
 
         retcode = process.poll()
         if check and retcode:
-            raise subprocess.CalledProcessError(
-                retcode, process.args, output=stdout, stderr=stderr
-            )
+            raise subprocess.CalledProcessError(retcode, process.args, output=stdout, stderr=stderr)
 
         return subprocess.CompletedProcess(process.args, retcode, stdout, stderr)

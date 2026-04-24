@@ -3,6 +3,7 @@
 Tests the ``capture()`` public API and each backend class directly,
 without going through ``Desktop.get_screenshot``.
 """
+
 from typing import Tuple
 from unittest.mock import MagicMock, patch
 
