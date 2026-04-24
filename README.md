@@ -493,9 +493,13 @@ MCP Client can access the following tools to interact with Windows:
 - `Move`: Move mouse pointer or drag (set drag=True) to coordinates.
 - `Shortcut`: Press keyboard shortcuts (`Ctrl+c`, `Alt+Tab`, etc).
 - `Wait`: Pause for a defined duration.
+- `WaitForElement`: Wait for a specific UI element by name and return its coordinates when it appears.
+- `FindElement`: Search interactive/scrollable UI elements by text or regex without taking a screenshot.
 - `Screenshot`: Fast screenshot-first desktop capture with cursor position, active/open windows, and an image. Skips UI tree extraction for speed and should be the default first call when you mainly need visual context. Supports `display=[0]` or `display=[0,1]` to capture specific screens.
 - `Snapshot`: Full desktop state capture for workflows that need interactive element ids, scrollable regions, or `use_dom=True` browser extraction. Supports `use_vision=True` for including screenshots and `display=[0]` or `display=[0,1]` for limiting all returned Snapshot information to specific screens.
 - `App`: To launch an application from the start menu, resize or move the window and switch between apps.
+- `LaunchURI`: Open URIs and protocol handlers directly (for example: `ms-settings:`, `spotify://`, `https://...`).
+- `SetDialogPath`: Fill the file path in standard Windows Open/Save dialogs and trigger Open/Save.
 - `Shell`: To execute PowerShell commands.
 - `Scrape`: To scrape the entire webpage for information.
 - `MultiSelect`: Select multiple items (files, folders, checkboxes) with optional Ctrl key. Uses bulk label-to-coordinate resolution when labels are provided.
@@ -504,6 +508,14 @@ MCP Client can access the following tools to interact with Windows:
 - `Process`: List running processes or terminate them by PID or name.
 - `Notification`: Send a Windows toast notification with a title and message.
 - `Registry`: Read, write, delete, or list Windows Registry values and keys.
+
+### How these changes help users
+
+- Better reliability in automation flows: `WaitForElement` replaces blind sleeps with element-aware waits.
+- Faster decision loops: `FindElement` can locate controls without vision-heavy snapshot payloads.
+- Better OS/app integration: `LaunchURI` opens settings pages, deep links, and default handlers directly.
+- More robust upload/save automation: `SetDialogPath` handles common Windows file dialog workflows.
+- Better client compatibility: `wait_for_previous` schema handling avoids validation crashes in clients that send this field.
 
 ### Performance Notes
 
